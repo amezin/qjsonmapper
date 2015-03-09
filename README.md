@@ -1,4 +1,4 @@
-QJsonSerialize
+QJsonSerialize [![Build Status](https://travis-ci.org/sanya-m/qjsonserialize.svg?branch=master)](https://travis-ci.org/sanya-m/qjsonserialize)
 ==============
 
 Description
