@@ -34,13 +34,13 @@ struct Serializer;
 template<typename T>
 bool deserialize(Deserialize::Json &json, T &data)
 {
-    return Serializer<Deserialize, T>()(json, data);
+    return Serializer<Deserialize, T>::apply(json, data);
 }
 
 template<typename T>
 bool serialize(Serialize::Json &json, const T &data)
 {
-    return Serializer<Serialize, T>()(json, data);
+    return Serializer<Serialize, T>::apply(json, data);
 }
 
 template<typename Mode, typename T>
@@ -68,7 +68,7 @@ struct BasicSerializer;
 template<typename T>
 struct BasicSerializer<Deserialize, T>
 {
-    bool operator()(Deserialize::Json &json, T &data)
+    static bool apply(Deserialize::Json &json, T &data)
     {
         QVariant asVariant;
         if (!deserialize(json, asVariant)) {
@@ -85,7 +85,7 @@ struct BasicSerializer<Deserialize, T>
 template<typename T>
 struct BasicSerializer<Serialize, T>
 {
-    bool operator()(Serialize::Json &json, const T &data)
+    static bool apply(Serialize::Json &json, const T &data)
     {
         json = QJsonValue(data);
         return true;
@@ -98,7 +98,7 @@ struct Serializer : public BasicSerializer<Mode, T> {};
 template<>
 struct Serializer<Deserialize, QVariant>
 {
-    bool operator()(Deserialize::Json &json, QVariant &data)
+    static bool apply(Deserialize::Json &json, QVariant &data)
     {
         if (json.isUndefined()) {
             return false;
@@ -111,7 +111,7 @@ struct Serializer<Deserialize, QVariant>
 template<>
 struct Serializer<Serialize, QVariant>
 {
-    bool operator()(Serialize::Json &json, const QVariant &data)
+    static bool apply(Serialize::Json &json, const QVariant &data)
     {
         QJsonValue v(QJsonValue::fromVariant(data));
         if (v.isUndefined()) {
@@ -125,22 +125,12 @@ struct Serializer<Serialize, QVariant>
 template<>
 struct Serializer<Deserialize, QString>
 {
-    bool operator()(Deserialize::Json &json, QString &data)
+    static bool apply(Deserialize::Json &json, QString &data)
     {
         if (json.isUndefined()) {
             return false;
         }
         data = json.toString();
-        return true;
-    }
-};
-
-template<>
-struct Serializer<Serialize, QString>
-{
-    bool operator()(Serialize::Json &json, const QString &data)
-    {
-        json = QJsonValue(data);
         return true;
     }
 };
@@ -151,7 +141,7 @@ struct SequenceSerializer;
 template<typename Container>
 struct SequenceSerializer<Serialize, Container>
 {
-    bool operator()(Serialize::Json &json, const Container &data)
+    static bool apply(Serialize::Json &json, const Container &data)
     {
         QJsonArray array;
         Q_FOREACH (const typename Container::value_type &v, data) {
@@ -169,7 +159,7 @@ struct SequenceSerializer<Serialize, Container>
 template<typename Container>
 struct SequenceSerializer<Deserialize, Container>
 {
-    bool operator()(Deserialize::Json &json, Container &data)
+    static bool apply(Deserialize::Json &json, Container &data)
     {
         if (!json.isArray()) {
             return false;
@@ -209,20 +199,19 @@ struct Serializer<Mode, QVector<T> >
 template<>
 struct Serializer<Serialize, std::string>
 {
-    bool operator()(Serialize::Json &json, const std::string &data)
+    static bool apply(Serialize::Json &json, const std::string &data)
     {
-        return Serializer<Serialize, QString>()(json,
-                                                QString::fromStdString(data));
+        return serialize(json, QString::fromStdString(data));
     }
 };
 
 template<>
 struct Serializer<Deserialize, std::string>
 {
-    bool operator()(Deserialize::Json &json, std::string &data)
+    static bool apply(Deserialize::Json &json, std::string &data)
     {
         QString qstring;
-        if (!Serializer<Deserialize, QString>()(json, qstring)) {
+        if (!deserialize(json, qstring)) {
             return false;
         }
         data = qstring.toStdString();
@@ -233,20 +222,19 @@ struct Serializer<Deserialize, std::string>
 template<>
 struct Serializer<Serialize, std::wstring>
 {
-    bool operator()(Serialize::Json &json, const std::wstring &data)
+    static bool apply(Serialize::Json &json, const std::wstring &data)
     {
-        return Serializer<Serialize, QString>()(json,
-                                                QString::fromStdWString(data));
+        return serialize(json, QString::fromStdWString(data));
     }
 };
 
 template<>
 struct Serializer<Deserialize, std::wstring>
 {
-    bool operator()(Deserialize::Json &json, std::wstring &data)
+    static bool apply(Deserialize::Json &json, std::wstring &data)
     {
         QString qstring;
-        if (!Serializer<Deserialize, QString>()(json, qstring)) {
+        if (!deserialize(json, qstring)) {
             return false;
         }
         data = qstring.toStdWString();
@@ -260,10 +248,10 @@ struct ObjectSerializer;
 template<typename T>
 struct ObjectSerializer<Serialize, T>
 {
-    bool operator()(Serialize::Json &json, const T &data)
+    static bool apply(Serialize::Json &json, const T &data)
     {
         QJsonObject object;
-        if (!Serializer<Serialize, T>().map(object, data)) {
+        if (!Serializer<Serialize, T>::map(object, data)) {
             return false;
         }
         json = QJsonValue(object);
@@ -274,13 +262,13 @@ struct ObjectSerializer<Serialize, T>
 template<typename T>
 struct ObjectSerializer<Deserialize, T>
 {
-    bool operator()(Deserialize::Json &json, T &data)
+    static bool apply(Deserialize::Json &json, T &data)
     {
         if (!json.isObject()) {
             return false;
         }
         T newData;
-        if (!Serializer<Deserialize, T>().map(json.toObject(), newData)) {
+        if (!Serializer<Deserialize, T>::map(json.toObject(), newData)) {
             return false;
         }
         data = newData;
@@ -342,8 +330,8 @@ bool mapAttribute(Serialize::JsonObject &o, const QString &name, const V &value,
 template<typename Mode, typename T>
 struct PairSerializer : public ObjectSerializer<Mode, T>
 {
-    bool map(typename Mode::JsonObject &json,
-             typename SerializerTraits<Mode, T>::Data &data)
+    static bool map(typename Mode::JsonObject &json,
+                    typename SerializerTraits<Mode, T>::Data &data)
     {
         return mapAttribute(json, QStringLiteral("first"), data.first)
                 && mapAttribute(json, QStringLiteral("second"), data.second);
