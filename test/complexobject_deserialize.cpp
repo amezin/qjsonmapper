@@ -34,7 +34,7 @@ int complexobject_deserialize(int, char *[])
     SomethingComplex o;
     QJsonObject json;
     json.insert("a", 123);
-    json.insert("s2", "LOL");
+    json.insert("s2", QStringLiteral("LOL"));
     VERIFY(qjsonserialize::deserialize(json, o));
     VERIFY(o.a == 123);
     VERIFY(o.s == "std::string");
