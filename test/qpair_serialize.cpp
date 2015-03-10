@@ -10,11 +10,12 @@ int qpair_serialize(int, char *[])
 
     QJsonValue json;
     VERIFY(qjsonserialize::serialize(json, v));
-    VERIFY(json.isObject());
+    VERIFY(json.isArray());
 
-    QJsonObject object(json.toObject());
-    VERIFY(object.value("first").toInt() == 1);
-    VERIFY(object.value("second").toInt() == 2);
+    QJsonArray array(json.toArray());
+    VERIFY(array.size() == 2);
+    VERIFY(array[0].toInt() == 1);
+    VERIFY(array[1].toInt() == 2);
 
     return 0;
 }

@@ -4,12 +4,12 @@
 
 int qpair_deserialize(int, char *[])
 {
-    QJsonObject object;
-    object["first"] = 1;
-    object["second"] = 2;
+    QJsonArray array;
+    array.push_back(1);
+    array.push_back(2);
 
     QPair<int, int> v;
-    VERIFY(qjsonserialize::deserialize(object, v));
+    VERIFY(qjsonserialize::deserialize(array, v));
 
     VERIFY(v.first == 1);
     VERIFY(v.second == 2);

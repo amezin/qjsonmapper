@@ -345,13 +345,43 @@ bool mapAttribute(Serialize::JsonObject &o, const QString &name, const V &value,
 }
 
 template<typename Mode, typename T>
-struct PairSerializer : public ObjectInstantiatingSerializer<Mode, T>
+struct PairSerializer;
+
+template<typename T>
+struct PairSerializer<Serialize, T>
 {
-    static bool map(typename Mode::JsonObject &json,
-                    typename SerializerTraits<Mode, T>::Data &data)
+    static bool apply(Serialize::Json &json, const T &data)
     {
-        return mapAttribute(json, QStringLiteral("first"), data.first)
-                && mapAttribute(json, QStringLiteral("second"), data.second);
+        QJsonArray array;
+        QJsonValue first, second;
+        if (!serialize(first, data.first) || !serialize(second, data.second)) {
+            return false;
+        }
+        array.push_back(first);
+        array.push_back(second);
+        json = array;
+        return true;
+    }
+};
+
+template<typename T>
+struct PairSerializer<Deserialize, T>
+{
+    static bool apply(Deserialize::Json &json, T &data)
+    {
+        if (!json.isArray()) {
+            return false;
+        }
+        QJsonArray array(json.toArray());
+        if (array.size() != 2) {
+            return false;
+        }
+        T newData;
+        if (!deserialize(array[0], newData.first) || !deserialize(array[1], newData.second)) {
+            return false;
+        }
+        data = newData;
+        return true;
     }
 };
 
