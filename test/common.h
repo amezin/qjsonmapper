@@ -8,5 +8,5 @@
 
 #define VERIFY(x) \
     if (!(x)) { \
-        qFatal(#x " is false"); \
+        qFatal("%s is false", #x); \
     }

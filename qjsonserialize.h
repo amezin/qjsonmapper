@@ -130,6 +130,29 @@ struct Serializer<Serialize, QVariant>
     }
 };
 
+template<>
+struct Serializer<Deserialize, QString>
+{
+    bool operator()(Deserialize::Json &json, QString &data)
+    {
+        if (json.isUndefined()) {
+            return false;
+        }
+        data = json.toString();
+        return true;
+    }
+};
+
+template<>
+struct Serializer<Serialize, QString>
+{
+    bool operator()(Serialize::Json &json, const QString &data)
+    {
+        json = QJsonValue(data);
+        return true;
+    }
+};
+
 template<typename Mode, typename Iterator>
 struct SequenceSerializer;
 
@@ -190,5 +213,53 @@ struct Serializer<Mode, QList<T> >
 template<typename Mode, typename T>
 struct Serializer<Mode, QVector<T> >
         : public SequenceSerializer<Mode, QVector<T> > {};
+
+template<>
+struct Serializer<Serialize, std::string>
+{
+    bool operator()(Serialize::Json &json, const std::string &data)
+    {
+        return Serializer<Serialize, QString>()(json,
+                                                QString::fromStdString(data));
+    }
+};
+
+template<>
+struct Serializer<Deserialize, std::string>
+{
+    bool operator()(Deserialize::Json &json, std::string &data)
+    {
+        QString qstring;
+        if (!Serializer<Deserialize, QString>()(json, qstring)) {
+            return false;
+        }
+        data = qstring.toStdString();
+        return true;
+    }
+};
+
+template<>
+struct Serializer<Serialize, std::wstring>
+{
+    bool operator()(Serialize::Json &json, const std::wstring &data)
+    {
+        return Serializer<Serialize, QString>()(json,
+                                                QString::fromStdWString(data));
+    }
+};
+
+template<>
+struct Serializer<Deserialize, std::wstring>
+{
+    bool operator()(Deserialize::Json &json, std::wstring &data)
+    {
+        QString qstring;
+        if (!Serializer<Deserialize, QString>()(json, qstring)) {
+            return false;
+        }
+        data = qstring.toStdWString();
+        return true;
+    }
+};
 
 }

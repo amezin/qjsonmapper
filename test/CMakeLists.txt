@@ -4,7 +4,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 file(GLOB SRCS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.cpp")
-create_test_sourcelist(TEST_SRCS testdriver.cpp ${SRCS})
+create_test_sourcelist(TEST_SRCS testdriver.cpp ${SRCS}
+                       EXTRA_INCLUDE common.h)
 add_executable(testdriver ${TEST_SRCS})
 
 foreach(TEST_SRC ${SRCS})
