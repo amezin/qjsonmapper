@@ -2,6 +2,8 @@
 
 #include <QPair>
 
+#include "qjsonserialize_container.h"
+
 int qpair_serialize(int, char *[])
 {
     QPair<int, int> v;

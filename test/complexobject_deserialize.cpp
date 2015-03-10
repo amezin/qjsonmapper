@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include "qjsonserialize_object.h"
+
 struct SomethingComplex
 {
     int a;

@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include "qjsonserialize_container.h"
+
 int qvector_deserialize(int, char *[])
 {
     QJsonArray array;

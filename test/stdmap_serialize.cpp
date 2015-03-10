@@ -2,6 +2,8 @@
 
 #include <map>
 
+#include "qjsonserialize_container.h"
+
 int stdmap_serialize(int, char *[])
 {
     std::map<std::string, double> data;

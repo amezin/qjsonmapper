@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "qjsonserialize_container.h"
+
 int stdpair_deserialize(int, char *[])
 {
     QJsonArray array;

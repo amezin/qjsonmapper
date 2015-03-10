@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "qjsonserialize_basic.h"
+
 int stdwstring_deserialize(int, char *[])
 {
     static const std::wstring expected(L"Hello, World!");

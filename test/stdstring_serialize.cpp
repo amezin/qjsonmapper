@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "qjsonserialize_basic.h"
+
 int stdstring_serialize(int, char *[])
 {
     std::string s("Hello, World!");

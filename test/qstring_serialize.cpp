@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include "qjsonserialize_basic.h"
+
 int qstring_serialize(int, char *[])
 {
     QString s("Hello, World!");

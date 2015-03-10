@@ -1,6 +1,8 @@
 #include "common.h"
 
-#include <vector>
+#include <QStringList>
+
+#include "qjsonserialize_container.h"
 
 int qstringlist_deserialize(int, char *[])
 {

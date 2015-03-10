@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include "qjsonserialize_basic.h"
+
 int int_deserialize(int , char *[])
 {
     QJsonValue json(42);

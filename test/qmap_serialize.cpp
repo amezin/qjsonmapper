@@ -2,6 +2,8 @@
 
 #include <QMap>
 
+#include "qjsonserialize_container.h"
+
 int qmap_serialize(int, char *[])
 {
     QMap<QString, double> data;

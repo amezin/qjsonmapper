@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include "qjsonserialize_container.h"
+
 int qvector_serialize(int, char *[])
 {
     QVector<int> v;
