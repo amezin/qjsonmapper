@@ -12,7 +12,7 @@ int stdvector_deserialize(int, char *[])
     std::vector<int> v;
     VERIFY(qjsonserialize::deserialize(array, v));
 
-    VERIFY(array.size() == v.size());
+    VERIFY(static_cast<size_t>(array.size()) == v.size());
     VERIFY(array.at(0).toInt() == v[0]);
     VERIFY(array.at(1).toInt() == v[1]);
     VERIFY(array.at(2).toInt() == v[2]);
