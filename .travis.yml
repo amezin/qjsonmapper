@@ -22,4 +22,5 @@ script:
 - ctest --output-on-failure
 
 env:
-- CMAKE_PREFIX_PATH=/opt/qt52
+- CMAKE_PREFIX_PATH=/opt/qt52 CXXFLAGS=
+- CMAKE_PREFIX_PATH=/opt/qt52 CXXFLAGS=-std=c++0x
