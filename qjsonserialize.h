@@ -312,7 +312,7 @@ bool mapAttribute(Serialize::JsonObject &o, const QString &name, const V &value)
     if (!serialize(attrValue, value)) {
         return false;
     }
-    o.insert(name, value);
+    o.insert(name, attrValue);
     return true;
 }
 
