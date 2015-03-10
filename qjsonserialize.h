@@ -189,6 +189,10 @@ template<typename Mode, typename T>
 struct Serializer<Mode, QList<T> >
         : public SequenceSerializer<Mode, QList<T> > {};
 
+template<typename Mode>
+struct Serializer<Mode, QStringList>
+        : public Serializer<Mode, QList<QString> > {};
+
 template<typename Mode, typename T>
 struct Serializer<Mode, QVector<T> >
         : public SequenceSerializer<Mode, QVector<T> > {};
