@@ -268,8 +268,24 @@ struct ObjectSerializer<Deserialize, T>
         if (!json.isObject()) {
             return false;
         }
+        return Serializer<Deserialize, T>::map(json.toObject(), data);
+    }
+};
+
+template<typename Mode, typename T>
+struct ObjectInstantiatingSerializer;
+
+template<typename T>
+struct ObjectInstantiatingSerializer<Serialize, T>
+        : public ObjectSerializer<Serialize, T> {};
+
+template<typename T>
+struct ObjectInstantiatingSerializer<Deserialize, T>
+{
+    static bool apply(Deserialize::Json &json, T &data)
+    {
         T newData;
-        if (!Serializer<Deserialize, T>::map(json.toObject(), newData)) {
+        if (!ObjectSerializer<Deserialize, T>::apply(json, newData)) {
             return false;
         }
         data = newData;
@@ -329,7 +345,7 @@ bool mapAttribute(Serialize::JsonObject &o, const QString &name, const V &value,
 }
 
 template<typename Mode, typename T>
-struct PairSerializer : public ObjectSerializer<Mode, T>
+struct PairSerializer : public ObjectInstantiatingSerializer<Mode, T>
 {
     static bool map(typename Mode::JsonObject &json,
                     typename SerializerTraits<Mode, T>::Data &data)
