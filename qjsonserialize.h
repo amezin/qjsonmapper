@@ -177,9 +177,6 @@ struct SequenceSerializer<Deserialize, Container>
     }
 };
 
-template<typename T> class QList;
-template<typename T> class QVector;
-
 template<typename Mode, typename T, typename Allocator>
 struct Serializer<Mode, std::list<T, Allocator> >
         : public SequenceSerializer<Mode, std::list<T, Allocator> > {};
