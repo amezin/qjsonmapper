@@ -18,8 +18,8 @@ template<typename Mode>
 struct Serializer<Mode, SomethingComplex>
         : public ObjectInstantiatingSerializer<Mode, SomethingComplex>
 {
-    static bool map(typename Mode::JsonObject &json,
-                    typename SerializerTraits<Mode, SomethingComplex>::Data &data)
+    static bool map(typename Serializer::JsonObject &json,
+                    typename Serializer::Data &data)
     {
         return mapAttribute(json, QStringLiteral("a"), data.a) &&
                 mapAttribute(json, QStringLiteral("s"), data.s) &&

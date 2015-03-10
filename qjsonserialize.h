@@ -248,6 +248,7 @@ struct ObjectSerializer;
 
 template<typename T>
 struct ObjectSerializer<Serialize, T>
+        : public SerializerTraits<Serialize, T>
 {
     static bool apply(Serialize::Json &json, const T &data)
     {
@@ -262,6 +263,7 @@ struct ObjectSerializer<Serialize, T>
 
 template<typename T>
 struct ObjectSerializer<Deserialize, T>
+        : public SerializerTraits<Deserialize, T>
 {
     static bool apply(Deserialize::Json &json, T &data)
     {
@@ -281,6 +283,7 @@ struct ObjectInstantiatingSerializer<Serialize, T>
 
 template<typename T>
 struct ObjectInstantiatingSerializer<Deserialize, T>
+        : public SerializerTraits<Deserialize, T>
 {
     static bool apply(Deserialize::Json &json, T &data)
     {
