@@ -26,16 +26,10 @@ template<Action action, typename Data>
 class Args;
 
 template<typename Data>
-bool serialize(QJsonValue &json, const Data &data)
-{
-    return map(Args<Serialize, Data>(json, data));
-}
+bool serialize(QJsonValue &json, const Data &data);
 
 template<typename Data>
-bool deserialize(const QJsonValue &json, Data &data)
-{
-    return map(Args<Deserialize, Data>(json, data));
-}
+bool deserialize(const QJsonValue &json, Data &data);
 
 template<Action action>
 class ObjectMapping;

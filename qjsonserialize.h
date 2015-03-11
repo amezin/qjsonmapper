@@ -19,6 +19,18 @@
 namespace qjsonserialize
 {
 
+template<typename Data>
+bool serialize(QJsonValue &json, const Data &data)
+{
+    return map(Args<Serialize, Data>(json, data));
+}
+
+template<typename Data>
+bool deserialize(const QJsonValue &json, Data &data)
+{
+    return map(Args<Deserialize, Data>(json, data));
+}
+
 template<typename T>
 class Args<Serialize, T>
 {
