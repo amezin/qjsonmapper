@@ -18,7 +18,7 @@ before_script:
 - cmake ..
 
 script:
-- make -j5
+- make -j5 -k
 - ctest --output-on-failure
 
 env:
