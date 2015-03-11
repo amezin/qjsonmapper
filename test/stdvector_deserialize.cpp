@@ -2,8 +2,6 @@
 
 #include <vector>
 
-#include "qjsonserialize_container.h"
-
 int stdvector_deserialize(int, char *[])
 {
     QJsonArray array;

@@ -2,8 +2,6 @@
 
 #include <utility>
 
-#include "qjsonserialize_container.h"
-
 int stdpair_serialize(int, char *[])
 {
     std::pair<int, int> v;

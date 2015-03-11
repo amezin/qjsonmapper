@@ -1,7 +1,5 @@
 #include "common.h"
 
-#include "qjsonserialize_object.h"
-
 struct SomethingComplex
 {
     int a;
@@ -16,18 +14,14 @@ struct SomethingComplex
 
 namespace qjsonserialize {
 
-template<typename Mode>
-struct Serializer<Mode, SomethingComplex>
-        : public ObjectInstantiatingSerializer<Mode, SomethingComplex>
+template<Action action>
+bool map(const Args<action, SomethingComplex> &args)
 {
-    static bool map(typename Serializer::JsonObject &json,
-                    typename Serializer::Data &data)
-    {
-        return mapAttribute(json, QStringLiteral("a"), data.a) &&
-                mapAttribute(json, QStringLiteral("s"), data.s) &&
-                mapAttribute(json, QStringLiteral("s2"), data.s2);
-    }
-};
+    ObjectMapping<action> mapping(args.json);
+    return mapping.map("a", args.data.a) &&
+            mapping.map("s", args.data.s, args.data.s) &&
+            mapping.map("s2", args.data.s2);
+}
 
 }
 

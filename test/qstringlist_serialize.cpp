@@ -2,8 +2,6 @@
 
 #include <QStringList>
 
-#include "qjsonserialize_container.h"
-
 int qstringlist_serialize(int, char *[])
 {
     QStringList v;

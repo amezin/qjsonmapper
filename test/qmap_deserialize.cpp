@@ -2,8 +2,6 @@
 
 #include <QMap>
 
-#include "qjsonserialize_container.h"
-
 int qmap_deserialize(int, char *[])
 {
     QJsonObject object;

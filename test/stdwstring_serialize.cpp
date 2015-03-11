@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include "qjsonserialize_basic.h"
-
 int stdwstring_serialize(int, char *[])
 {
     std::wstring s(L"Hello, World!");
