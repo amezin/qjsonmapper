@@ -14,7 +14,7 @@
 #include <QString>
 #include <QVariant>
 
-#include "qjsonserialize_minimal.h"
+#include "qjsonserialize_fwd.h"
 
 namespace qjsonserialize
 {

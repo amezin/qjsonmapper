@@ -1,4 +1,4 @@
-#include "qjsonserialize_minimal.h"
+#include "qjsonserialize_fwd.h"
 
 #include <QMap>
 
