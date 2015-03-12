@@ -102,13 +102,11 @@ public:
     bool map(const QString &key, const AttributeType &value)
     {
         if (!good || jsonObject.contains(key)) {
-            good = false;
-            return false;
+            return good = false;
         }
         QJsonValue json;
         if (!serialize(json, value)) {
-            good = false;
-            return false;
+            return good = false;
         }
         jsonObject.insert(key, json);
         return true;
@@ -124,6 +122,22 @@ public:
     bool map(const QString &key, const AttributeType &value, const QJsonValue &)
     {
         return map(key, value);
+    }
+
+    template<typename AttributeType, typename Class, typename Setter>
+    bool mapGetSet(const QString &key, const Class &object,
+                         AttributeType (Class::*getter)() const,
+                         const Setter &)
+    {
+        return map(key, (object.*getter)());
+    }
+
+    template<typename AttributeType, typename Class, typename Setter, typename Default>
+    bool mapGetSet(const QString &key, const Class &object,
+                         AttributeType (Class::*getter)() const,
+                         const Setter &, const Default &)
+    {
+        return map(key, (object.*getter)());
     }
 
     ~ObjectMapping()
@@ -153,8 +167,7 @@ public:
     bool map(const QString &key, AttributeType &value)
     {
         if (!good || !jsonObject.contains(key)) {
-            good = false;
-            return false;
+            return good = false;
         }
         return good = deserialize(jsonObject.value(key), value);
     }
@@ -180,6 +193,65 @@ public:
         }
         return good = deserialize(jsonObject.contains(key) ? jsonObject.value(key) : defaultJsonValue, value);
     }
+
+    template<typename AttributeType, typename Class, typename Getter>
+    bool mapGetSet(const QString &key, Class &object, const Getter &,
+                         void (Class::*setter)(AttributeType))
+    {
+        typename RemoveConstRef<AttributeType>::Type value;
+        if (map(key, value)) {
+            (object.*setter)(value);
+        }
+        return good;
+    }
+
+    template<typename AttributeType, typename Class, typename Getter, typename Default>
+    bool mapGetSet(const QString &key, Class &object, const Getter &,
+                         void (Class::*setter)(AttributeType),
+                         const Default &defaultValue)
+    {
+        typename RemoveConstRef<AttributeType>::Type value;
+        if (map(key, value, defaultValue)) {
+            (object.*setter)(value);
+        }
+        return good;
+    }
+
+    template<typename AttributeType, typename Class, typename Getter>
+    bool mapGetSet(const QString &key, Class &object, const Getter &,
+                         bool (Class::*setter)(AttributeType))
+    {
+        typename RemoveConstRef<AttributeType>::Type value;
+        if (map(key, value)) {
+            good = (object->*setter)(value);
+        }
+        return good;
+    }
+
+    template<typename AttributeType, typename Class, typename Getter, typename Default>
+    bool mapGetSet(const QString &key, Class &object, const Getter &,
+                         bool (Class::*setter)(AttributeType),
+                         const Default &defaultValue)
+    {
+        typename RemoveConstRef<AttributeType>::Type value;
+        if (map(key, value, defaultValue)) {
+            good = (object->*setter)(value);
+        }
+        return good;
+    }
+
+private:
+    template<typename T>
+    struct RemoveConstRef
+    {
+        typedef T Type;
+    };
+
+    template<typename T>
+    struct RemoveConstRef<const T> : public RemoveConstRef<T> {};
+
+    template<typename T>
+    struct RemoveConstRef<T&> : public RemoveConstRef<T> {};
 };
 
 namespace implementations
