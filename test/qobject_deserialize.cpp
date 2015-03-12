@@ -1,0 +1,40 @@
+#include "common.h"
+
+#include <QObject>
+
+class TestQObject2 : public QObject
+{
+    Q_OBJECT
+
+    Q_PROPERTY(int getSet MEMBER getSet)
+public:
+    TestQObject2()
+        : getSet(42)
+    {
+    }
+
+    int getSet;
+};
+
+namespace qjsonserialize {
+
+template<Action action>
+bool map(const Args<action, TestQObject2> &args)
+{
+    ObjectMapping<action> mapping(args.json);
+    return mapping.template mapQProperty<int>("get_set", &args.data, "getSet");
+}
+
+}
+
+int qobject_deserialize(int, char *[])
+{
+    TestQObject2 o;
+    QJsonObject json;
+    json.insert("get_set", 123);
+    VERIFY(qjsonserialize::deserialize(json, o));
+    VERIFY(o.getSet == 123);
+    return 0;
+}
+
+#include "qobject_deserialize.moc"

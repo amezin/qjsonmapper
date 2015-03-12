@@ -140,6 +140,28 @@ public:
         return map(key, (object.*getter)());
     }
 
+    template<typename AttributeType>
+    bool mapQProperty(const QString &key, const QObject *object, const char *propertyName)
+    {
+        QVariant asVariant(object->property(propertyName));
+        if (!asVariant.convert(qMetaTypeId<AttributeType>())) {
+            return good = false;
+        }
+        return map(key, asVariant.value<AttributeType>());
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QString &key, const QObject *object, const char *propertyName, const AttributeType &)
+    {
+        return mapQProperty<AttributeType>(key, object, propertyName);
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QString &key, const QObject *object, const char *propertyName, const QJsonValue &)
+    {
+        return mapQProperty<AttributeType>(key, object, propertyName);
+    }
+
     ~ObjectMapping()
     {
         if (good) {
@@ -236,6 +258,36 @@ public:
         typename RemoveConstRef<AttributeType>::Type value;
         if (map(key, value, defaultValue)) {
             good = (object->*setter)(value);
+        }
+        return good;
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QString &key, QObject *object, const char *propertyName)
+    {
+        AttributeType value;
+        if (map(key, value)) {
+            good = object->setProperty(propertyName, QVariant::fromValue(value));
+        }
+        return good;
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QString &key, QObject *object, const char *propertyName, const AttributeType &defaultValue)
+    {
+        AttributeType value;
+        if (map(key, value, defaultValue)) {
+            good = object->setProperty(propertyName, QVariant::fromValue(value));
+        }
+        return good;
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QString &key, QObject *object, const char *propertyName, const QJsonValue &defaultValue)
+    {
+        AttributeType value;
+        if (map(key, value, defaultValue)) {
+            good = object->setProperty(propertyName, QVariant::fromValue(value));
         }
         return good;
     }
