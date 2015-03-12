@@ -144,7 +144,7 @@ public:
     bool mapQProperty(const QString &key, const QObject *object, const char *propertyName)
     {
         QVariant asVariant(object->property(propertyName));
-        if (!asVariant.convert(qMetaTypeId<AttributeType>())) {
+        if (!asVariant.isNull() && !asVariant.convert(qMetaTypeId<AttributeType>())) {
             return good = false;
         }
         return map(key, asVariant.value<AttributeType>());
@@ -323,7 +323,7 @@ bool simple(const Args<Deserialize, T> &args)
     if (!deserialize(args.json, asVariant)) {
         return false;
     }
-    if (!asVariant.convert(qMetaTypeId<T>())) {
+    if (!asVariant.isNull() && !asVariant.convert(qMetaTypeId<T>())) {
         return false;
     }
     args.data = asVariant.value<T>();
