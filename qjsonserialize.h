@@ -387,6 +387,8 @@ namespace implementations
 template<typename Map>
 struct StdMapTraits
 {
+    typedef Map Container;
+    typedef typename Map::const_iterator Iterator;
     typedef typename Map::key_type KeyType;
     typedef typename Map::mapped_type ValueType;
 
@@ -411,6 +413,8 @@ struct StdMapTraits
 template<typename Map>
 struct QtMapTraits
 {
+    typedef Map Container;
+    typedef typename Map::const_iterator Iterator;
     typedef typename Map::key_type KeyType;
     typedef typename Map::mapped_type ValueType;
 
@@ -432,27 +436,34 @@ struct QtMapTraits
     }
 };
 
-template<typename Map, typename Traits>
-bool associative(const Args<Serialize, Map> &args)
+template<typename T>
+bool associativeKeyToString(const T &key, QString &string)
+{
+    QJsonValue keyJson;
+    return serialize(keyJson, key) && deserialize(keyJson, string);
+}
+
+template<>
+inline bool associativeKeyToString(const QString &key, QString &string)
+{
+    string = key;
+    return true;
+}
+
+template<typename Traits>
+bool associative(const Args<Serialize, typename Traits::Container> &args)
 {
     QJsonObject object;
-    for (typename Map::const_iterator i = args.data.begin(); i != args.data.end(); ++i) {
-        QJsonValue keyJson, valueJson;
-        if (!serialize(keyJson, Traits::key(i))) {
+    for (typename Traits::Iterator i = args.data.begin(); i != args.data.end(); ++i) {
+        QString keyString;
+        if (!associativeKeyToString(Traits::key(i), keyString)) {
             return false;
         }
-        if (keyJson.isArray() || keyJson.isObject()) {
-            return false;
-        }
-        if (!serialize(valueJson, Traits::value(i))) {
-            return false;
-        }
-        QVariant keyVariant(keyJson.toVariant());
-        if (!keyVariant.convert(qMetaTypeId<QString>())) {
-            return false;
-        }
-        QString keyString(keyVariant.toString());
         if (object.contains(keyString)) {
+            return false;
+        }
+        QJsonValue valueJson;
+        if (!serialize(valueJson, Traits::value(i))) {
             return false;
         }
         object.insert(keyString, valueJson);
@@ -461,13 +472,13 @@ bool associative(const Args<Serialize, Map> &args)
     return true;
 }
 
-template<typename Map, typename Traits>
-bool associative(const Args<Deserialize, Map> &args)
+template<typename Traits>
+bool associative(const Args<Deserialize, typename Traits::Container> &args)
 {
     if (!args.json.isObject()) {
         return false;
     }
-    Map newData;
+    typename Traits::Container newData;
     QJsonObject object(args.json.toObject());
     for (QJsonObject::ConstIterator i = object.begin(); i != object.end(); ++i) {
         QJsonValue keyJson(i.key()), valueJson(i.value());
@@ -493,19 +504,19 @@ bool associative(const Args<Deserialize, Map> &args)
 template<Action action, typename Key, typename Value>
 bool map(const Args<action, QMap<Key, Value> > &args)
 {
-    return implementations::associative<QMap<Key, Value>, implementations::QtMapTraits<QMap<Key, Value> > >(args);
+    return implementations::associative<implementations::QtMapTraits<QMap<Key, Value> > >(args);
 }
 
 template<Action action, typename Key, typename Value>
 bool map(const Args<action, QHash<Key, Value> > &args)
 {
-    return implementations::associative<QHash<Key, Value>, implementations::StdMapTraits<QHash<Key, Value> > >(args);
+    return implementations::associative<implementations::QtMapTraits<QHash<Key, Value> > >(args);
 }
 
 template<Action action, typename Key, typename Value, typename Predicate, typename Allocator>
 bool map(const Args<action, std::map<Key, Value, Predicate, Allocator> > &args)
 {
-    return implementations::associative<std::map<Key, Value, Predicate, Allocator>, implementations::StdMapTraits<std::map<Key, Value, Predicate, Allocator> > >(args);
+    return implementations::associative<implementations::StdMapTraits<std::map<Key, Value, Predicate, Allocator> > >(args);
 }
 
 }
