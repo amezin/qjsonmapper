@@ -796,10 +796,11 @@ bool mapAssociative(const Args<Serialize, typename Traits::Container> &args)
 {
     QJsonObject object;
     for (typename Traits::Iterator i = args.data.begin(); i != args.data.end(); ++i) {
-        QString keyString;
-        if (!toQString(Traits::key(i), keyString)) {
+        QJsonValue keyJson;
+        if (!serialize(keyJson, Traits::key(i)) || !keyJson.isString()) {
             return false;
         }
+        QString keyString(keyJson.toString());
         if (object.contains(keyString)) {
             return false;
         }
@@ -823,7 +824,7 @@ bool mapAssociative(const Args<Deserialize, typename Traits::Container> &args)
     QJsonObject object(args.json.toObject());
     for (QJsonObject::ConstIterator i = object.begin(); i != object.end(); ++i) {
         typename Traits::KeyType key;
-        if (!fromQString(i.key(), key)) {
+        if (!deserialize(QJsonValue(i.key()), key)) {
             return false;
         }
         if (newData.count(key)) {
