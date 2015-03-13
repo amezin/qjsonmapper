@@ -13,9 +13,6 @@ class QJsonValue;
 namespace qjsonserialize
 {
 
-template<typename Args>
-bool map(const Args &args);
-
 enum Action
 {
     Serialize,
@@ -24,6 +21,15 @@ enum Action
 
 template<Action action, typename Data>
 class Args;
+
+template<Action action, typename T>
+bool map(const Args<action, T> &args);
+
+template<Action action, typename T>
+class ObjectMapArgs;
+
+template<Action action, typename T>
+void mapObject(ObjectMapArgs<action, T> &);
 
 template<typename Data>
 bool serialize(QJsonValue &json, const Data &data);

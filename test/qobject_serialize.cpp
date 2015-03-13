@@ -21,11 +21,10 @@ public:
 namespace qjsonserialize {
 
 template<Action action>
-bool map(const Args<action, TestQObject1> &args)
+void mapObject(ObjectMapArgs<action, TestQObject1> &mapping)
 {
-    ObjectMapping<action> mapping(args.json);
-    return mapping.template mapQProperty<int>("get_set", &args.data, "getSet") &&
-            mapping.mapQProperty("property2", &args.data, "property2", QStringLiteral("Default Value"));
+    mapping.template mapQProperty<int>("get_set", &mapping.data, "getSet") &&
+            mapping.mapQProperty("property2", &mapping.data, "property2", QStringLiteral("Default Value"));
 }
 
 }

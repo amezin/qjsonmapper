@@ -28,13 +28,12 @@ private:
 namespace qjsonserialize {
 
 template<Action action>
-bool map(const Args<action, SomethingComplex> &args)
+void mapObject(ObjectMapArgs<action, SomethingComplex> &args)
 {
-    ObjectMapping<action> mapping(args.json);
-    return mapping.map("a", args.data.a) &&
-            mapping.map("s", args.data.s, args.data.s) &&
-            mapping.map("s2", args.data.s2) &&
-            mapping.mapGetSet("getSet", args.data, &SomethingComplex::get, &SomethingComplex::set);
+    args.map("a", args.data.a) &&
+            args.map("s", args.data.s, args.data.s) &&
+            args.map("s2", args.data.s2) &&
+            args.mapGetSet("getSet", args.data, &SomethingComplex::get, &SomethingComplex::set);
 }
 
 }

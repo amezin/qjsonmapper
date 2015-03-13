@@ -40,7 +40,8 @@ class Args<Serialize, T>
 {
 public:
     QJsonValue &json;
-    const T &data;
+    typedef const T &DataRef;
+    DataRef data;
     typedef ObjectMapping<Serialize> ObjectMapping;
 
     Args(QJsonValue &json, const T &data)
@@ -67,7 +68,8 @@ class Args<Deserialize, T>
 {
 public:
     const QJsonValue &json;
-    T &data;
+    typedef T &DataRef;
+    DataRef data;
     typedef ObjectMapping<Deserialize> ObjectMapping;
 
     Args(const QJsonValue &json, T &data)
@@ -405,6 +407,36 @@ private:
     template<typename T>
     struct RemoveConstRef<T&> : public RemoveConstRef<T> {};
 };
+
+template<Action action, typename T>
+class ObjectMapArgs : public ObjectMapping<action>
+{
+    Q_DISABLE_COPY(ObjectMapArgs)
+
+public:
+
+    typename Args<action, T>::DataRef data;
+
+private:
+
+    ObjectMapArgs(const Args<action, T> &args)
+        : ObjectMapping<action>(args.json), data(args.data)
+    {
+    }
+
+    friend bool map<action, T>(const Args<action, T> &);
+};
+
+template<Action action, typename T>
+void mapObject(ObjectMapArgs<action, T> &);
+
+template<Action action, typename T>
+bool map(const Args<action, T> &args)
+{
+    ObjectMapArgs<action, T> a(args);
+    mapObject(a);
+    return a.good;
+}
 
 namespace implementations
 {
