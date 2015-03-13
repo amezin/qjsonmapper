@@ -39,7 +39,8 @@ template<typename T>
 class Args<Serialize, T>
 {
 public:
-    QJsonValue &json;
+    typedef QJsonValue &JsonRef;
+    JsonRef json;
     typedef const T &DataRef;
     DataRef data;
     typedef ObjectMapping<Deserialize> ObjectMappingType;
@@ -67,7 +68,8 @@ template<typename T>
 class Args<Deserialize, T>
 {
 public:
-    const QJsonValue &json;
+    typedef const QJsonValue &JsonRef;
+    JsonRef json;
     typedef T &DataRef;
     DataRef data;
     typedef ObjectMapping<Deserialize> ObjectMappingType;
