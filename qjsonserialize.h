@@ -37,6 +37,7 @@ class Args<Serialize, T>
 public:
     QJsonValue &json;
     const T &data;
+    typedef ObjectMapping<Serialize> ObjectMapping;
 
     Args(QJsonValue &json, const T &data)
         : json(json), data(data)
@@ -63,6 +64,7 @@ class Args<Deserialize, T>
 public:
     const QJsonValue &json;
     T &data;
+    typedef ObjectMapping<Deserialize> ObjectMapping;
 
     Args(const QJsonValue &json, T &data)
         : json(json), data(data)
