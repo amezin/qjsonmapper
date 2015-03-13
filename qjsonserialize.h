@@ -93,9 +93,6 @@ private:
     Args &operator =(const Args &) Q_DECL_EQ_DELETE;
 };
 
-namespace conversions
-{
-
 inline bool toQString(const QString &value, QString &out)
 {
     out = value;
@@ -183,8 +180,6 @@ inline bool fromDouble(double value, float &out)
     }
     out = static_cast<float>(value);
     return true;
-}
-
 }
 
 template<>
@@ -480,23 +475,20 @@ bool mapValue(const Args<action, T> &args)
     return a.good;
 }
 
-namespace implementations
-{
-
 template<typename T>
-bool stringlike(const Args<Deserialize, T> &args)
+bool mapString(const Args<Deserialize, T> &args)
 {
     if (!args.json.isString()) {
         return false;
     }
-    return conversions::fromQString(args.json.toString(), args.data);
+    return fromQString(args.json.toString(), args.data);
 }
 
 template<typename T>
-bool stringlike(const Args<Serialize, T> &args)
+bool mapString(const Args<Serialize, T> &args)
 {
     QString asString;
-    if (!conversions::toQString(args.data, asString)) {
+    if (!toQString(args.data, asString)) {
         return false;
     }
     args.json = QJsonValue(asString);
@@ -504,7 +496,7 @@ bool stringlike(const Args<Serialize, T> &args)
 }
 
 template<typename T>
-bool boollike(const Args<Deserialize, T> &args)
+bool mapBool(const Args<Deserialize, T> &args)
 {
     if (!args.json.isString()) {
         return false;
@@ -514,116 +506,114 @@ bool boollike(const Args<Deserialize, T> &args)
 }
 
 template<typename T>
-bool boollike(const Args<Serialize, T> &args)
+bool mapBool(const Args<Serialize, T> &args)
 {
     args.json = QJsonValue(static_cast<bool>(args.data));
     return true;
 }
 
 template<typename T>
-bool numeric(const Args<Deserialize, T> &args)
+bool mapNumeric(const Args<Deserialize, T> &args)
 {
     if (!args.json.isDouble()) {
         return false;
     }
-    return conversions::fromDouble(args.json.toDouble(), args.data);
+    return fromDouble(args.json.toDouble(), args.data);
 }
 
 template<typename T>
-bool numeric(const Args<Serialize, T> &args)
+bool mapNumeric(const Args<Serialize, T> &args)
 {
     double value;
-    if (!conversions::toDouble(args.data, value)) {
+    if (!toDouble(args.data, value)) {
         return false;
     }
     args.json = QJsonValue(value);
     return true;
 }
 
-}
-
 template<Action action>
 inline bool mapValue(const Args<action, bool> &args)
 {
-    return implementations::boollike(args);
+    return mapBool(args);
 }
 
 template<Action action>
 inline bool mapValue(const Args<action, QString> &args)
 {
-    return implementations::stringlike(args);
+    return mapString(args);
 }
 
 template<Action action>
 inline bool mapValue(const Args<action, QByteArray> &args)
 {
-    return implementations::stringlike(args);
+    return mapString(args);
 }
 
 template<Action action>
 inline bool mapValue(const Args<action, std::string> &args)
 {
-    return implementations::stringlike(args);
+    return mapString(args);
 }
 
 template<Action action>
 inline bool mapValue(const Args<action, std::wstring> &args)
 {
-    return implementations::stringlike(args);
+    return mapString(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, int> &args)
 {
-    return implementations::numeric(args);
+    return mapNumeric(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, short> &args)
 {
-    return implementations::numeric(args);
+    return mapNumeric(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, long long> &args)
 {
-    return implementations::numeric(args);
+    return mapNumeric(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, unsigned int> &args)
 {
-    return implementations::numeric(args);
+    return mapNumeric(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, unsigned short> &args)
 {
-    return implementations::numeric(args);
+    return mapNumeric(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, unsigned long long> &args)
 {
-    return implementations::numeric(args);
+    return mapNumeric(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, float> &args)
 {
-    return implementations::numeric(args);
+    return mapNumeric(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, double> &args)
 {
-    return implementations::numeric(args);
+    return mapNumeric(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, long double> &args)
 {
-    return implementations::numeric(args);
+    return mapNumeric(args);
 }
 
 template<>
@@ -640,11 +630,8 @@ inline bool mapValue(const Args<Deserialize, QVariant> &args)
     return true;
 }
 
-namespace implementations
-{
-
 template<typename Container>
-bool sequence(const Args<Serialize, Container> &args)
+bool mapSequence(const Args<Serialize, Container> &args)
 {
     QJsonArray array;
     Q_FOREACH (const typename Container::value_type &v, args.data) {
@@ -659,7 +646,7 @@ bool sequence(const Args<Serialize, Container> &args)
 }
 
 template<typename Container>
-bool sequence(const Args<Deserialize, Container> &args)
+bool mapSequence(const Args<Deserialize, Container> &args)
 {
     if (!args.json.isArray()) {
         return false;
@@ -676,43 +663,38 @@ bool sequence(const Args<Deserialize, Container> &args)
     return true;
 }
 
-}
-
 template<Action action, typename T, typename Allocator>
 bool mapValue(const Args<action, std::list<T, Allocator> > &args)
 {
-    return implementations::sequence(args);
+    return mapSequence(args);
 }
 
 template<Action action, typename T, typename Allocator>
 bool mapValue(const Args<action, std::vector<T, Allocator> > &args)
 {
-    return implementations::sequence(args);
+    return mapSequence(args);
 }
 
 template<Action action, typename T>
 bool mapValue(const Args<action, QList<T> > &args)
 {
-    return implementations::sequence(args);
+    return mapSequence(args);
 }
 
 template<Action action, typename T>
 bool mapValue(const Args<action, QVector<T> > &args)
 {
-    return implementations::sequence(args);
+    return mapSequence(args);
 }
 
 template<Action action>
 bool mapValue(const Args<action, QStringList> &args)
 {
-    return implementations::sequence(args);
+    return mapSequence(args);
 }
 
-namespace implementations
-{
-
 template<typename Pair>
-bool pair(const Args<Serialize, Pair> &args)
+bool mapPair(const Args<Serialize, Pair> &args)
 {
     QJsonArray array;
     QJsonValue first, second;
@@ -728,7 +710,7 @@ bool pair(const Args<Serialize, Pair> &args)
 }
 
 template<typename Pair>
-bool pair(const Args<Deserialize, Pair> &args)
+bool mapPair(const Args<Deserialize, Pair> &args)
 {
     if (!args.json.isArray()) {
         return false;
@@ -745,22 +727,17 @@ bool pair(const Args<Deserialize, Pair> &args)
     return true;
 }
 
-}
-
 template<Action action, typename First, typename Second>
 bool mapValue(const Args<action, std::pair<First, Second> > &args)
 {
-    return implementations::pair(args);
+    return mapPair(args);
 }
 
 template<Action action, typename First, typename Second>
 bool mapValue(const Args<action, QPair<First, Second> > &args)
 {
-    return implementations::pair(args);
+    return mapPair(args);
 }
-
-namespace implementations
-{
 
 template<typename Map>
 struct StdMapTraits
@@ -815,12 +792,12 @@ struct QtMapTraits
 };
 
 template<typename Traits>
-bool associative(const Args<Serialize, typename Traits::Container> &args)
+bool mapAssociative(const Args<Serialize, typename Traits::Container> &args)
 {
     QJsonObject object;
     for (typename Traits::Iterator i = args.data.begin(); i != args.data.end(); ++i) {
         QString keyString;
-        if (!conversions::toQString(Traits::key(i), keyString)) {
+        if (!toQString(Traits::key(i), keyString)) {
             return false;
         }
         if (object.contains(keyString)) {
@@ -837,7 +814,7 @@ bool associative(const Args<Serialize, typename Traits::Container> &args)
 }
 
 template<typename Traits>
-bool associative(const Args<Deserialize, typename Traits::Container> &args)
+bool mapAssociative(const Args<Deserialize, typename Traits::Container> &args)
 {
     if (!args.json.isObject()) {
         return false;
@@ -846,7 +823,7 @@ bool associative(const Args<Deserialize, typename Traits::Container> &args)
     QJsonObject object(args.json.toObject());
     for (QJsonObject::ConstIterator i = object.begin(); i != object.end(); ++i) {
         typename Traits::KeyType key;
-        if (!conversions::fromQString(i.key(), key)) {
+        if (!fromQString(i.key(), key)) {
             return false;
         }
         if (newData.count(key)) {
@@ -862,24 +839,22 @@ bool associative(const Args<Deserialize, typename Traits::Container> &args)
     return true;
 }
 
-}
-
 template<Action action, typename Key, typename Value>
 bool mapValue(const Args<action, QMap<Key, Value> > &args)
 {
-    return implementations::associative<implementations::QtMapTraits<QMap<Key, Value> > >(args);
+    return mapAssociative<QtMapTraits<QMap<Key, Value> > >(args);
 }
 
 template<Action action, typename Key, typename Value>
 bool mapValue(const Args<action, QHash<Key, Value> > &args)
 {
-    return implementations::associative<implementations::QtMapTraits<QHash<Key, Value> > >(args);
+    return mapAssociative<QtMapTraits<QHash<Key, Value> > >(args);
 }
 
 template<Action action, typename Key, typename Value, typename Predicate, typename Allocator>
 bool mapValue(const Args<action, std::map<Key, Value, Predicate, Allocator> > &args)
 {
-    return implementations::associative<implementations::StdMapTraits<std::map<Key, Value, Predicate, Allocator> > >(args);
+    return mapAssociative<StdMapTraits<std::map<Key, Value, Predicate, Allocator> > >(args);
 }
 
 }
