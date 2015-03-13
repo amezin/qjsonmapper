@@ -2,12 +2,12 @@
 
 #include <QMap>
 
-int qmap_numerickey_serialize(int, char *[])
+int qhash_serialize(int, char *[])
 {
-    QMap<int, double> data;
-    data.insert(1, 1.0);
-    data.insert(2, 2.0);
-    data.insert(3, 3.0);
+    QHash<QString, double> data;
+    data.insert("1", 1.0);
+    data.insert("2", 2.0);
+    data.insert("3", 3.0);
 
     QJsonValue json;
     VERIFY(qjsonserialize::serialize(json, data));

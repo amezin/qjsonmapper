@@ -8,11 +8,15 @@
 
 #pragma once
 
+#include <limits>
+#include <cmath>
+
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QString>
 #include <QVariant>
+#include <qnumeric.h>
 
 #include "qjsonserialize_fwd.h"
 
@@ -84,6 +88,100 @@ public:
 private:
     Args &operator =(const Args &) Q_DECL_EQ_DELETE;
 };
+
+namespace conversions
+{
+
+inline bool toQString(const QString &value, QString &out)
+{
+    out = value;
+    return true;
+}
+
+inline bool toQString(const QByteArray &value, QString &out)
+{
+    out = QString::fromUtf8(value);
+    return true;
+}
+
+inline bool toQString(const std::string &value, QString &out)
+{
+    out = QString::fromStdString(value);
+    return true;
+}
+
+inline bool toQString(const std::wstring &value, QString &out)
+{
+    out = QString::fromStdWString(value);
+    return true;
+}
+
+inline bool fromQString(const QString &qstring, QString &out)
+{
+    out = qstring;
+    return true;
+}
+
+inline bool fromQString(const QString &qstring, QByteArray &out)
+{
+    out = qstring.toUtf8();
+    return true;
+}
+
+inline bool fromQString(const QString &qstring, std::string &out)
+{
+    out = qstring.toStdString();
+    return true;
+}
+
+inline bool fromQString(const QString &qstring, std::wstring &out)
+{
+    out = qstring.toStdWString();
+    return true;
+}
+
+template<typename T>
+bool toDouble(T value, double &out)
+{
+    out = static_cast<double>(value);
+    return true;
+}
+
+template<typename T>
+bool fromDouble(double value, T &out)
+{
+    if (value > std::numeric_limits<T>::max() || value < std::numeric_limits<T>::min()) {
+        return false;
+    }
+    out = static_cast<T>(value);
+    return true;
+}
+
+template<>
+inline bool fromDouble(double value, double &out)
+{
+    out = value;
+    return true;
+}
+
+template<>
+inline bool fromDouble(double value, long double &out)
+{
+    out = value;
+    return true;
+}
+
+template<>
+inline bool fromDouble(double value, float &out)
+{
+    if (qIsFinite(value) && std::fabs(value) > std::numeric_limits<float>::max()) {
+        return false;
+    }
+    out = static_cast<float>(value);
+    return true;
+}
+
+}
 
 template<>
 class ObjectMapping<Serialize>
@@ -312,32 +410,146 @@ namespace implementations
 {
 
 template<typename T>
-bool simple(const Args<Serialize, T> &args)
+bool stringlike(const Args<Deserialize, T> &args)
 {
-    args.json = QJsonValue(args.data);
+    if (!args.json.isString()) {
+        return false;
+    }
+    return conversions::fromQString(args.json.toString(), args.data);
+}
+
+template<typename T>
+bool stringlike(const Args<Serialize, T> &args)
+{
+    QString asString;
+    if (!conversions::toQString(args.data, asString)) {
+        return false;
+    }
+    args.json = QJsonValue(asString);
     return true;
 }
 
 template<typename T>
-bool simple(const Args<Deserialize, T> &args)
+bool boollike(const Args<Deserialize, T> &args)
 {
-    QVariant asVariant;
-    if (!deserialize(args.json, asVariant)) {
+    if (!args.json.isString()) {
         return false;
     }
-    if (!asVariant.isNull() && !asVariant.convert(qMetaTypeId<T>())) {
+    args.data = args.json.toBool();
+    return true;
+}
+
+template<typename T>
+bool boollike(const Args<Serialize, T> &args)
+{
+    args.json = QJsonValue(static_cast<bool>(args.data));
+    return true;
+}
+
+template<typename T>
+bool numeric(const Args<Deserialize, T> &args)
+{
+    if (!args.json.isDouble()) {
         return false;
     }
-    args.data = asVariant.value<T>();
+    return conversions::fromDouble(args.json.toDouble(), args.data);
+}
+
+template<typename T>
+bool numeric(const Args<Serialize, T> &args)
+{
+    double value;
+    if (!conversions::toDouble(args.data, value)) {
+        return false;
+    }
+    args.json = QJsonValue(value);
     return true;
 }
 
 }
 
-template<Action action, typename T>
-bool map(const Args<action, T> &args)
+template<Action action>
+inline bool map(const Args<action, bool> &args)
 {
-    return implementations::simple(args);
+    return implementations::boollike(args);
+}
+
+template<Action action>
+inline bool map(const Args<action, QString> &args)
+{
+    return implementations::stringlike(args);
+}
+
+template<Action action>
+inline bool map(const Args<action, QByteArray> &args)
+{
+    return implementations::stringlike(args);
+}
+
+template<Action action>
+inline bool map(const Args<action, std::string> &args)
+{
+    return implementations::stringlike(args);
+}
+
+template<Action action>
+inline bool map(const Args<action, std::wstring> &args)
+{
+    return implementations::stringlike(args);
+}
+
+template<Action action>
+bool map(const Args<action, int> &args)
+{
+    return implementations::numeric(args);
+}
+
+template<Action action>
+bool map(const Args<action, short> &args)
+{
+    return implementations::numeric(args);
+}
+
+template<Action action>
+bool map(const Args<action, long long> &args)
+{
+    return implementations::numeric(args);
+}
+
+template<Action action>
+bool map(const Args<action, unsigned int> &args)
+{
+    return implementations::numeric(args);
+}
+
+template<Action action>
+bool map(const Args<action, unsigned short> &args)
+{
+    return implementations::numeric(args);
+}
+
+template<Action action>
+bool map(const Args<action, unsigned long long> &args)
+{
+    return implementations::numeric(args);
+}
+
+template<Action action>
+bool map(const Args<action, float> &args)
+{
+    return implementations::numeric(args);
+}
+
+template<Action action>
+bool map(const Args<action, double> &args)
+{
+    return implementations::numeric(args);
+}
+
+template<Action action>
+bool map(const Args<action, long double> &args)
+{
+    return implementations::numeric(args);
 }
 
 template<>
@@ -351,40 +563,6 @@ template<>
 inline bool map(const Args<Deserialize, QVariant> &args)
 {
     args.data = args.json.toVariant();
-    return true;
-}
-
-template<>
-inline bool map(const Args<Serialize, std::string> &args)
-{
-    return serialize(args.json, QString::fromStdString(args.data));
-}
-
-template<>
-inline bool map(const Args<Deserialize, std::string> &args)
-{
-    QString asQString;
-    if (!deserialize(args.json, asQString)) {
-        return false;
-    }
-    args.data = asQString.toStdString();
-    return true;
-}
-
-template<>
-inline bool map(const Args<Serialize, std::wstring> &args)
-{
-    return serialize(args.json, QString::fromStdWString(args.data));
-}
-
-template<>
-inline bool map(const Args<Deserialize, std::wstring> &args)
-{
-    QString asQString;
-    if (!deserialize(args.json, asQString)) {
-        return false;
-    }
-    args.data = asQString.toStdWString();
     return true;
 }
 
@@ -562,27 +740,13 @@ struct QtMapTraits
     }
 };
 
-template<typename T>
-bool associativeKeyToString(const T &key, QString &string)
-{
-    QJsonValue keyJson;
-    return serialize(keyJson, key) && deserialize(keyJson, string);
-}
-
-template<>
-inline bool associativeKeyToString(const QString &key, QString &string)
-{
-    string = key;
-    return true;
-}
-
 template<typename Traits>
 bool associative(const Args<Serialize, typename Traits::Container> &args)
 {
     QJsonObject object;
     for (typename Traits::Iterator i = args.data.begin(); i != args.data.end(); ++i) {
         QString keyString;
-        if (!associativeKeyToString(Traits::key(i), keyString)) {
+        if (!conversions::toQString(Traits::key(i), keyString)) {
             return false;
         }
         if (object.contains(keyString)) {
@@ -607,16 +771,15 @@ bool associative(const Args<Deserialize, typename Traits::Container> &args)
     typename Traits::Container newData;
     QJsonObject object(args.json.toObject());
     for (QJsonObject::ConstIterator i = object.begin(); i != object.end(); ++i) {
-        QJsonValue keyJson(i.key()), valueJson(i.value());
         typename Traits::KeyType key;
-        if (!deserialize(keyJson, key)) {
+        if (!conversions::fromQString(i.key(), key)) {
             return false;
         }
         if (newData.count(key)) {
             return false;
         }
         typename Traits::ValueType value;
-        if (!deserialize(valueJson, value)) {
+        if (!deserialize(i.value(), value)) {
             return false;
         }
         Traits::insert(newData, key, value);

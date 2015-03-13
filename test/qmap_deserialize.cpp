@@ -9,7 +9,7 @@ int qmap_deserialize(int, char *[])
     object["2"] = 2.0;
     object["3"] = 3.0;
 
-    QMap<QString, double> data;
+    QMap<std::string, double> data;
     VERIFY(qjsonserialize::deserialize(object, data));
     VERIFY(data.size() == 3);
 

@@ -4,7 +4,7 @@
 
 int qmap_serialize(int, char *[])
 {
-    QMap<QString, double> data;
+    QMap<std::string, double> data;
     data.insert("1", 1.0);
     data.insert("2", 2.0);
     data.insert("3", 3.0);
