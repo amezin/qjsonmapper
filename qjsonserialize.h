@@ -14,6 +14,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QMetaEnum>
 #include <QString>
 #include <QVariant>
 #include <qnumeric.h>
@@ -856,6 +857,80 @@ template<Action action, typename Key, typename Value, typename Predicate, typena
 bool mapValue(const Args<action, std::map<Key, Value, Predicate, Allocator> > &args)
 {
     return mapAssociative<StdMapTraits<std::map<Key, Value, Predicate, Allocator> > >(args);
+}
+
+template<typename Container>
+size_t arraySize(const Container &container)
+{
+    return container.size();
+}
+
+template<typename T, size_t N>
+size_t arraySize(T (&)[N])
+{
+    return N;
+}
+
+template<typename T, typename StringArray>
+bool mapEnum(const Args<Serialize, T> &args, const StringArray &values)
+{
+    if (args.data >= arraySize(values)) {
+        return false;
+    }
+    args.json = QJsonValue(QString(values[args.data]));
+    return true;
+}
+
+template<typename T, typename StringArray>
+bool mapEnum(const Args<Deserialize, T> &args, const StringArray &values)
+{
+    if (!args.json.isString()) {
+        return false;
+    }
+    size_t n = arraySize(values);
+    QString stringValue(args.json.toString());
+    for (size_t i = 0; i < n; i++) {
+        if (stringValue == values[i]) {
+            args.data = static_cast<T>(i);
+            return true;
+        }
+    }
+    return false;
+}
+
+template<typename T>
+bool mapEnum(const Args<Serialize, T> &args, const QMetaEnum &metaEnum)
+{
+    const char *value = metaEnum.valueToKey(args.data);
+    if (!value) {
+        return false;
+    }
+    args.json = QJsonValue(QString::fromUtf8(value));
+    return true;
+}
+
+template<typename T>
+bool mapEnum(const Args<Deserialize, T> &args, const QMetaEnum &metaEnum)
+{
+    if (!args.json.isString()) {
+        return false;
+    }
+    bool ok = false;
+    int intValue = metaEnum.keyToValue(args.json.toString().toUtf8().constData(), &ok);
+    if (ok) {
+        args.data = static_cast<T>(intValue);
+    }
+    return ok;
+}
+
+template<Action action, typename T>
+bool mapEnum(const Args<action, T> &args, const QMetaObject &metaObject, const char *enumName)
+{
+    int enumIndex = metaObject.indexOfEnumerator(enumName);
+    if (enumIndex < 0) {
+        return false;
+    }
+    return mapEnum(args, metaObject.enumerator(enumIndex));
 }
 
 }
