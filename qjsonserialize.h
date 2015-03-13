@@ -244,7 +244,7 @@ public:
     bool mapQProperty(const QString &key, const QObject *object, const char *propertyName)
     {
         QVariant asVariant(object->property(propertyName));
-        if (!asVariant.isNull() && !asVariant.convert(qMetaTypeId<AttributeType>())) {
+        if (!asVariant.convert(qMetaTypeId<AttributeType>())) {
             return good = false;
         }
         return mapField(key, asVariant.value<AttributeType>());
