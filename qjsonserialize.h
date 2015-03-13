@@ -228,18 +228,19 @@ public:
         return map(key, value);
     }
 
-    template<typename AttributeType, typename Class, typename Setter>
+    template<typename AttributeType, typename Class, typename SetterReturn, typename SetterArg>
     bool mapGetSet(const QString &key, const Class &object,
-                         AttributeType (Class::*getter)() const,
-                         const Setter &)
+                   AttributeType (Class::*getter)() const,
+                   SetterReturn (Class::*)(SetterArg))
     {
         return map(key, (object.*getter)());
     }
 
-    template<typename AttributeType, typename Class, typename Setter, typename Default>
+    template<typename AttributeType, typename Class, typename SetterReturn, typename SetterArg, typename Default>
     bool mapGetSet(const QString &key, const Class &object,
-                         AttributeType (Class::*getter)() const,
-                         const Setter &, const Default &)
+                   AttributeType (Class::*getter)() const,
+                   SetterReturn (Class::*)(SetterArg),
+                   const Default &)
     {
         return map(key, (object.*getter)());
     }
@@ -320,9 +321,10 @@ public:
         return good = deserialize(jsonObject.contains(key) ? jsonObject.value(key) : defaultJsonValue, value);
     }
 
-    template<typename AttributeType, typename Class, typename Getter>
-    bool mapGetSet(const QString &key, Class &object, const Getter &,
-                         void (Class::*setter)(AttributeType))
+    template<typename AttributeType, typename Class, typename GetterReturn>
+    bool mapGetSet(const QString &key, Class &object,
+                   GetterReturn (Class::*)() const,
+                   void (Class::*setter)(AttributeType))
     {
         typename RemoveConstRef<AttributeType>::Type value;
         if (map(key, value)) {
@@ -331,10 +333,11 @@ public:
         return good;
     }
 
-    template<typename AttributeType, typename Class, typename Getter, typename Default>
-    bool mapGetSet(const QString &key, Class &object, const Getter &,
-                         void (Class::*setter)(AttributeType),
-                         const Default &defaultValue)
+    template<typename AttributeType, typename Class, typename GetterReturn, typename Default>
+    bool mapGetSet(const QString &key, Class &object,
+                   GetterReturn (Class::*)() const,
+                   void (Class::*setter)(AttributeType),
+                   const Default &defaultValue)
     {
         typename RemoveConstRef<AttributeType>::Type value;
         if (map(key, value, defaultValue)) {
@@ -343,9 +346,10 @@ public:
         return good;
     }
 
-    template<typename AttributeType, typename Class, typename Getter>
-    bool mapGetSet(const QString &key, Class &object, const Getter &,
-                         bool (Class::*setter)(AttributeType))
+    template<typename AttributeType, typename Class, typename GetterReturn>
+    bool mapGetSet(const QString &key, Class &object,
+                   GetterReturn (Class::*)() const,
+                   bool (Class::*setter)(AttributeType))
     {
         typename RemoveConstRef<AttributeType>::Type value;
         if (map(key, value)) {
@@ -354,10 +358,11 @@ public:
         return good;
     }
 
-    template<typename AttributeType, typename Class, typename Getter, typename Default>
-    bool mapGetSet(const QString &key, Class &object, const Getter &,
-                         bool (Class::*setter)(AttributeType),
-                         const Default &defaultValue)
+    template<typename AttributeType, typename Class, typename GetterReturn, typename Default>
+    bool mapGetSet(const QString &key, Class &object,
+                   GetterReturn (Class::*)() const,
+                   bool (Class::*setter)(AttributeType),
+                   const Default &defaultValue)
     {
         typename RemoveConstRef<AttributeType>::Type value;
         if (map(key, value, defaultValue)) {
@@ -417,16 +422,51 @@ class ObjectMapArgs : public ObjectMapping<action>
 
 public:
 
+    using ObjectMapping<action>::map;
+    using ObjectMapping<action>::mapGetSet;
+    using ObjectMapping<action>::mapQProperty;
+
     typename Args<action, T>::DataRef data;
 
-private:
+    template<typename GetterReturn, typename SetterReturn, typename SetterArgument>
+    bool mapGetSet(const QString &key,
+                   GetterReturn (T::*getter)() const,
+                   SetterReturn (T::*setter)(SetterArgument))
+    {
+        return ObjectMapping<action>::mapGetSet(key, data, getter, setter);
+    }
+
+    template<typename GetterReturn, typename SetterReturn, typename SetterArgument, typename Default>
+    bool mapGetSet(const QString &key,
+                   GetterReturn (T::*getter)() const,
+                   SetterReturn (T::*setter)(SetterArgument),
+                   const Default &defaultValue)
+    {
+        return ObjectMapping<action>::mapGetSet(key, data, getter, setter, defaultValue);
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QString &key, const char *propertyName)
+    {
+        return ObjectMapping<action>::template mapQProperty<AttributeType>(key, &data, propertyName);
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QString &key, const char *propertyName, const AttributeType &defaultValue)
+    {
+        return ObjectMapping<action>::template mapQProperty<AttributeType>(key, &data, propertyName, defaultValue);
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QString &key, const char *propertyName, const QJsonValue &defaultValue)
+    {
+        return ObjectMapping<action>::template mapQProperty<AttributeType>(key, &data, propertyName, defaultValue);
+    }
 
     ObjectMapArgs(const Args<action, T> &args)
         : ObjectMapping<action>(args.json), data(args.data)
     {
     }
-
-    friend bool map<action, T>(const Args<action, T> &);
 };
 
 template<Action action, typename T>

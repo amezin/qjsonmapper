@@ -1,12 +1,12 @@
 #include "common.h"
 
-struct SomethingComplex
+struct SomethingComplex2
 {
     int a;
     std::string s;
     QString s2;
 
-    SomethingComplex()
+    SomethingComplex2()
         : a(42), s("std::string"), s2(QStringLiteral("QString")), getSet(0)
     {
     }
@@ -21,34 +21,48 @@ struct SomethingComplex
         getSet = v;
     }
 
+    const QString &get2() const
+    {
+        return getSet2;
+    }
+
+    void set2(const QString &v)
+    {
+        getSet2 = v;
+    }
+
 private:
     int getSet;
+    QString getSet2;
 };
 
 namespace qjsonserialize {
 
 template<Action action>
-void mapObject(ObjectMapArgs<action, SomethingComplex> &args)
+void mapObject(ObjectMapArgs<action, SomethingComplex2> &args)
 {
     args.map("a", args.data.a) &&
             args.map("s", args.data.s, args.data.s) &&
             args.map("s2", args.data.s2) &&
-            args.mapGetSet("getSet", args.data, &SomethingComplex::get, &SomethingComplex::set);
+            args.mapGetSet("getSet", args.data, &SomethingComplex2::get, &SomethingComplex2::set) &&
+            args.mapGetSet("getSet2", &SomethingComplex2::get2, &SomethingComplex2::set2);
 }
 
 }
 
 int complexobject_deserialize(int, char *[])
 {
-    SomethingComplex o;
+    SomethingComplex2 o;
     QJsonObject json;
     json.insert("a", 123);
     json.insert("s2", QStringLiteral("LOL"));
     json.insert("getSet", 1);
+    json.insert("getSet2", QStringLiteral("Test"));
     VERIFY(qjsonserialize::deserialize(json, o));
     VERIFY(o.a == 123);
     VERIFY(o.s == "std::string");
     VERIFY(o.s2 == "LOL");
     VERIFY(o.get() == 1);
+    VERIFY(o.get2() == "Test");
     return 0;
 }
