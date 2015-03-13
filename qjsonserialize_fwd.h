@@ -23,7 +23,7 @@ template<Action action, typename Data>
 class Args;
 
 template<Action action, typename T>
-bool map(const Args<action, T> &args);
+bool mapValue(const Args<action, T> &args);
 
 template<Action action, typename T>
 class ObjectMapArgs;

@@ -41,9 +41,9 @@ namespace qjsonserialize {
 template<Action action>
 void mapObject(ObjectMapArgs<action, SomethingComplex1> &args)
 {
-    args.map("a", args.data.a) &&
-            args.map("s", args.data.s, args.data.s) &&
-            args.map("s2", args.data.s2) &&
+    args.mapField("a", args.data.a) &&
+            args.mapField("s", args.data.s, args.data.s) &&
+            args.mapField("s2", args.data.s2) &&
             args.mapGetSet("getSet", args.data, &SomethingComplex1::get, &SomethingComplex1::set) &&
             args.mapGetSet("getSet2", &SomethingComplex1::get2, &SomethingComplex1::set2);
 }

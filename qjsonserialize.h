@@ -26,13 +26,13 @@ namespace qjsonserialize
 template<typename Data>
 bool serialize(QJsonValue &json, const Data &data)
 {
-    return map(Args<Serialize, Data>(json, data));
+    return mapValue(Args<Serialize, Data>(json, data));
 }
 
 template<typename Data>
 bool deserialize(const QJsonValue &json, Data &data)
 {
-    return map(Args<Deserialize, Data>(json, data));
+    return mapValue(Args<Deserialize, Data>(json, data));
 }
 
 template<typename T>
@@ -203,7 +203,7 @@ public:
     }
 
     template<typename AttributeType>
-    bool map(const QString &key, const AttributeType &value)
+    bool mapField(const QString &key, const AttributeType &value)
     {
         if (!good || jsonObject.contains(key)) {
             return good = false;
@@ -217,15 +217,15 @@ public:
     }
 
     template<typename AttributeType>
-    bool map(const QString &key, const AttributeType &value, const AttributeType &)
+    bool mapField(const QString &key, const AttributeType &value, const AttributeType &)
     {
-        return map(key, value);
+        return mapField(key, value);
     }
 
     template<typename AttributeType>
-    bool map(const QString &key, const AttributeType &value, const QJsonValue &)
+    bool mapField(const QString &key, const AttributeType &value, const QJsonValue &)
     {
-        return map(key, value);
+        return mapField(key, value);
     }
 
     template<typename AttributeType, typename Class, typename SetterReturn, typename SetterArg>
@@ -233,7 +233,7 @@ public:
                    AttributeType (Class::*getter)() const,
                    SetterReturn (Class::*)(SetterArg))
     {
-        return map(key, (object.*getter)());
+        return mapField(key, (object.*getter)());
     }
 
     template<typename AttributeType, typename Class, typename SetterReturn, typename SetterArg, typename Default>
@@ -242,7 +242,7 @@ public:
                    SetterReturn (Class::*)(SetterArg),
                    const Default &)
     {
-        return map(key, (object.*getter)());
+        return mapField(key, (object.*getter)());
     }
 
     template<typename AttributeType>
@@ -252,7 +252,7 @@ public:
         if (!asVariant.isNull() && !asVariant.convert(qMetaTypeId<AttributeType>())) {
             return good = false;
         }
-        return map(key, asVariant.value<AttributeType>());
+        return mapField(key, asVariant.value<AttributeType>());
     }
 
     template<typename AttributeType>
@@ -291,7 +291,7 @@ public:
     }
 
     template<typename AttributeType>
-    bool map(const QString &key, AttributeType &value)
+    bool mapField(const QString &key, AttributeType &value)
     {
         if (!good || !jsonObject.contains(key)) {
             return good = false;
@@ -300,7 +300,7 @@ public:
     }
 
     template<typename AttributeType>
-    bool map(const QString &key, AttributeType &value, const AttributeType &defaultValue)
+    bool mapField(const QString &key, AttributeType &value, const AttributeType &defaultValue)
     {
         if (!good) {
             return false;
@@ -313,7 +313,7 @@ public:
     }
 
     template<typename AttributeType>
-    bool map(const QString &key, AttributeType &value, const QJsonValue &defaultJsonValue)
+    bool mapField(const QString &key, AttributeType &value, const QJsonValue &defaultJsonValue)
     {
         if (!good) {
             return false;
@@ -327,7 +327,7 @@ public:
                    void (Class::*setter)(AttributeType))
     {
         typename RemoveConstRef<AttributeType>::Type value;
-        if (map(key, value)) {
+        if (mapField(key, value)) {
             (object.*setter)(value);
         }
         return good;
@@ -340,7 +340,7 @@ public:
                    const Default &defaultValue)
     {
         typename RemoveConstRef<AttributeType>::Type value;
-        if (map(key, value, defaultValue)) {
+        if (mapField(key, value, defaultValue)) {
             (object.*setter)(value);
         }
         return good;
@@ -352,7 +352,7 @@ public:
                    bool (Class::*setter)(AttributeType))
     {
         typename RemoveConstRef<AttributeType>::Type value;
-        if (map(key, value)) {
+        if (mapField(key, value)) {
             good = (object->*setter)(value);
         }
         return good;
@@ -365,7 +365,7 @@ public:
                    const Default &defaultValue)
     {
         typename RemoveConstRef<AttributeType>::Type value;
-        if (map(key, value, defaultValue)) {
+        if (mapField(key, value, defaultValue)) {
             good = (object->*setter)(value);
         }
         return good;
@@ -375,7 +375,7 @@ public:
     bool mapQProperty(const QString &key, QObject *object, const char *propertyName)
     {
         AttributeType value;
-        if (map(key, value)) {
+        if (mapField(key, value)) {
             good = object->setProperty(propertyName, QVariant::fromValue(value));
         }
         return good;
@@ -385,7 +385,7 @@ public:
     bool mapQProperty(const QString &key, QObject *object, const char *propertyName, const AttributeType &defaultValue)
     {
         AttributeType value;
-        if (map(key, value, defaultValue)) {
+        if (mapField(key, value, defaultValue)) {
             good = object->setProperty(propertyName, QVariant::fromValue(value));
         }
         return good;
@@ -395,7 +395,7 @@ public:
     bool mapQProperty(const QString &key, QObject *object, const char *propertyName, const QJsonValue &defaultValue)
     {
         AttributeType value;
-        if (map(key, value, defaultValue)) {
+        if (mapField(key, value, defaultValue)) {
             good = object->setProperty(propertyName, QVariant::fromValue(value));
         }
         return good;
@@ -422,7 +422,7 @@ class ObjectMapArgs : public ObjectMapping<action>
 
 public:
 
-    using ObjectMapping<action>::map;
+    using ObjectMapping<action>::mapField;
     using ObjectMapping<action>::mapGetSet;
     using ObjectMapping<action>::mapQProperty;
 
@@ -473,7 +473,7 @@ template<Action action, typename T>
 void mapObject(ObjectMapArgs<action, T> &);
 
 template<Action action, typename T>
-bool map(const Args<action, T> &args)
+bool mapValue(const Args<action, T> &args)
 {
     ObjectMapArgs<action, T> a(args);
     mapObject(a);
@@ -543,98 +543,98 @@ bool numeric(const Args<Serialize, T> &args)
 }
 
 template<Action action>
-inline bool map(const Args<action, bool> &args)
+inline bool mapValue(const Args<action, bool> &args)
 {
     return implementations::boollike(args);
 }
 
 template<Action action>
-inline bool map(const Args<action, QString> &args)
+inline bool mapValue(const Args<action, QString> &args)
 {
     return implementations::stringlike(args);
 }
 
 template<Action action>
-inline bool map(const Args<action, QByteArray> &args)
+inline bool mapValue(const Args<action, QByteArray> &args)
 {
     return implementations::stringlike(args);
 }
 
 template<Action action>
-inline bool map(const Args<action, std::string> &args)
+inline bool mapValue(const Args<action, std::string> &args)
 {
     return implementations::stringlike(args);
 }
 
 template<Action action>
-inline bool map(const Args<action, std::wstring> &args)
+inline bool mapValue(const Args<action, std::wstring> &args)
 {
     return implementations::stringlike(args);
 }
 
 template<Action action>
-bool map(const Args<action, int> &args)
+bool mapValue(const Args<action, int> &args)
 {
     return implementations::numeric(args);
 }
 
 template<Action action>
-bool map(const Args<action, short> &args)
+bool mapValue(const Args<action, short> &args)
 {
     return implementations::numeric(args);
 }
 
 template<Action action>
-bool map(const Args<action, long long> &args)
+bool mapValue(const Args<action, long long> &args)
 {
     return implementations::numeric(args);
 }
 
 template<Action action>
-bool map(const Args<action, unsigned int> &args)
+bool mapValue(const Args<action, unsigned int> &args)
 {
     return implementations::numeric(args);
 }
 
 template<Action action>
-bool map(const Args<action, unsigned short> &args)
+bool mapValue(const Args<action, unsigned short> &args)
 {
     return implementations::numeric(args);
 }
 
 template<Action action>
-bool map(const Args<action, unsigned long long> &args)
+bool mapValue(const Args<action, unsigned long long> &args)
 {
     return implementations::numeric(args);
 }
 
 template<Action action>
-bool map(const Args<action, float> &args)
+bool mapValue(const Args<action, float> &args)
 {
     return implementations::numeric(args);
 }
 
 template<Action action>
-bool map(const Args<action, double> &args)
+bool mapValue(const Args<action, double> &args)
 {
     return implementations::numeric(args);
 }
 
 template<Action action>
-bool map(const Args<action, long double> &args)
+bool mapValue(const Args<action, long double> &args)
 {
     return implementations::numeric(args);
 }
 
 template<>
-inline bool map(const Args<Serialize, QVariant> &args)
+inline bool mapValue(const Args<Serialize, QVariant> &args)
 {
     args.json = QJsonValue::fromVariant(args.data);
     return true;
 }
 
 template<>
-inline bool map(const Args<Deserialize, QVariant> &args)
+inline bool mapValue(const Args<Deserialize, QVariant> &args)
 {
     args.data = args.json.toVariant();
     return true;
@@ -679,31 +679,31 @@ bool sequence(const Args<Deserialize, Container> &args)
 }
 
 template<Action action, typename T, typename Allocator>
-bool map(const Args<action, std::list<T, Allocator> > &args)
+bool mapValue(const Args<action, std::list<T, Allocator> > &args)
 {
     return implementations::sequence(args);
 }
 
 template<Action action, typename T, typename Allocator>
-bool map(const Args<action, std::vector<T, Allocator> > &args)
+bool mapValue(const Args<action, std::vector<T, Allocator> > &args)
 {
     return implementations::sequence(args);
 }
 
 template<Action action, typename T>
-bool map(const Args<action, QList<T> > &args)
+bool mapValue(const Args<action, QList<T> > &args)
 {
     return implementations::sequence(args);
 }
 
 template<Action action, typename T>
-bool map(const Args<action, QVector<T> > &args)
+bool mapValue(const Args<action, QVector<T> > &args)
 {
     return implementations::sequence(args);
 }
 
 template<Action action>
-bool map(const Args<action, QStringList> &args)
+bool mapValue(const Args<action, QStringList> &args)
 {
     return implementations::sequence(args);
 }
@@ -748,13 +748,13 @@ bool pair(const Args<Deserialize, Pair> &args)
 }
 
 template<Action action, typename First, typename Second>
-bool map(const Args<action, std::pair<First, Second> > &args)
+bool mapValue(const Args<action, std::pair<First, Second> > &args)
 {
     return implementations::pair(args);
 }
 
 template<Action action, typename First, typename Second>
-bool map(const Args<action, QPair<First, Second> > &args)
+bool mapValue(const Args<action, QPair<First, Second> > &args)
 {
     return implementations::pair(args);
 }
@@ -865,19 +865,19 @@ bool associative(const Args<Deserialize, typename Traits::Container> &args)
 }
 
 template<Action action, typename Key, typename Value>
-bool map(const Args<action, QMap<Key, Value> > &args)
+bool mapValue(const Args<action, QMap<Key, Value> > &args)
 {
     return implementations::associative<implementations::QtMapTraits<QMap<Key, Value> > >(args);
 }
 
 template<Action action, typename Key, typename Value>
-bool map(const Args<action, QHash<Key, Value> > &args)
+bool mapValue(const Args<action, QHash<Key, Value> > &args)
 {
     return implementations::associative<implementations::QtMapTraits<QHash<Key, Value> > >(args);
 }
 
 template<Action action, typename Key, typename Value, typename Predicate, typename Allocator>
-bool map(const Args<action, std::map<Key, Value, Predicate, Allocator> > &args)
+bool mapValue(const Args<action, std::map<Key, Value, Predicate, Allocator> > &args)
 {
     return implementations::associative<implementations::StdMapTraits<std::map<Key, Value, Predicate, Allocator> > >(args);
 }
