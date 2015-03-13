@@ -42,7 +42,7 @@ public:
     QJsonValue &json;
     typedef const T &DataRef;
     DataRef data;
-    typedef ObjectMapping<Serialize> ObjectMapping;
+    typedef ObjectMapping<Deserialize> ObjectMappingType;
 
     Args(QJsonValue &json, const T &data)
         : json(json), data(data)
@@ -70,7 +70,7 @@ public:
     const QJsonValue &json;
     typedef T &DataRef;
     DataRef data;
-    typedef ObjectMapping<Deserialize> ObjectMapping;
+    typedef ObjectMapping<Deserialize> ObjectMappingType;
 
     Args(const QJsonValue &json, T &data)
         : json(json), data(data)
