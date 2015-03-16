@@ -20,9 +20,9 @@ namespace qjsonserialize
 {
 
 template<Action action>
-bool mapValue(const Args<action, TestEnum2::TestEnum> &args)
+bool mapValue(const Context<action, TestEnum2::TestEnum> &ctx)
 {
-    return mapEnum(args, TestEnum2::staticMetaObject, "TestEnum");
+    return mapEnum(ctx, TestEnum2::staticMetaObject, "TestEnum");
 }
 
 }

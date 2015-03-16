@@ -15,9 +15,9 @@ namespace qjsonserialize
 {
 
 template<Action action>
-bool mapValue(const Args<action, TestEnum> &args)
+bool mapValue(const Context<action, TestEnum> &ctx)
 {
-    return mapEnum(args, enumElements);
+    return mapEnum(ctx, enumElements);
 }
 
 }

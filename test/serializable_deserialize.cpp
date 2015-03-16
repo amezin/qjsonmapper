@@ -32,13 +32,13 @@ struct MySerializable2
     }
 
     template<qjsonserialize::Action action>
-    static void mapToJson(qjsonserialize::ObjectMapArgs<action, MySerializable2> &args)
+    static void mapToJson(qjsonserialize::ObjectContext<action, MySerializable2> &ctx)
     {
-        args.mapField("a", args.data.a) &&
-                args.mapField("s", args.data.s, args.data.s) &&
-                args.mapField("s2", args.data.s2) &&
-                args.mapGetSet("getSet", args.data, &MySerializable2::get, &MySerializable2::set) &&
-                args.mapGetSet("getSet2", &MySerializable2::get2, &MySerializable2::set2);
+        ctx.mapField("a", ctx.data.a) &&
+                ctx.mapField("s", ctx.data.s, ctx.data.s) &&
+                ctx.mapField("s2", ctx.data.s2) &&
+                ctx.mapGetSet("getSet", ctx.data, &MySerializable2::get, &MySerializable2::set) &&
+                ctx.mapGetSet("getSet2", &MySerializable2::get2, &MySerializable2::set2);
     }
 
 private:

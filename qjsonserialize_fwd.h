@@ -20,16 +20,16 @@ enum Action
 };
 
 template<Action action, typename Data>
-class Args;
+class Context;
 
 template<Action action, typename T>
-bool mapValue(const Args<action, T> &args);
+bool mapValue(const Context<action, T> &ctx);
 
 template<Action action, typename T>
-class ObjectMapArgs;
+class ObjectContext;
 
 template<Action action, typename T>
-void mapObject(ObjectMapArgs<action, T> &);
+void mapObject(ObjectContext<action, T> &);
 
 template<typename Data>
 bool serialize(QJsonValue &json, const Data &data);

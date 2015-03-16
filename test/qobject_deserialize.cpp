@@ -25,7 +25,7 @@ public:
 namespace qjsonserialize {
 
 template<Action action>
-void mapObject(ObjectMapArgs<action, TestQObject2> &mapping)
+void mapObject(ObjectContext<action, TestQObject2> &mapping)
 {
     mapping.template mapQProperty<int>("get_set", &mapping.data, "getSet") &&
             mapping.mapQProperty("property2", &mapping.data, "property2", QStringLiteral("Default Value")) &&

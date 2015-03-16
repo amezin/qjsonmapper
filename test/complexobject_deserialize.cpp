@@ -40,14 +40,14 @@ private:
 namespace qjsonserialize {
 
 template<Action action>
-void mapObject(ObjectMapArgs<action, SomethingComplex2> &args)
+void mapObject(ObjectContext<action, SomethingComplex2> &ctx)
 {
-    args.mapField("a", args.data.a) &&
-            args.mapField("s", args.data.s, args.data.s) &&
-            args.mapField("s2", args.data.s2) &&
-            args.mapGetSet("getSet", args.data, &SomethingComplex2::get, &SomethingComplex2::set) &&
-            args.mapGetSet("getSet2", &SomethingComplex2::get2, &SomethingComplex2::set2) &&
-            args.mapField("f", args.data.f, 0.0f);
+    ctx.mapField("a", ctx.data.a) &&
+            ctx.mapField("s", ctx.data.s, ctx.data.s) &&
+            ctx.mapField("s2", ctx.data.s2) &&
+            ctx.mapGetSet("getSet", ctx.data, &SomethingComplex2::get, &SomethingComplex2::set) &&
+            ctx.mapGetSet("getSet2", &SomethingComplex2::get2, &SomethingComplex2::set2) &&
+            ctx.mapField("f", ctx.data.f, 0.0f);
 }
 
 }

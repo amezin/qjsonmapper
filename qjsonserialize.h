@@ -27,19 +27,19 @@ namespace qjsonserialize
 template<typename Data>
 bool serialize(QJsonValue &json, const Data &data)
 {
-    return mapValue(Args<Serialize, Data>(json, data));
+    return mapValue(Context<Serialize, Data>(json, data));
 }
 
 template<typename Data>
 bool deserialize(const QJsonValue &json, Data &data)
 {
-    return mapValue(Args<Deserialize, Data>(json, data));
+    return mapValue(Context<Deserialize, Data>(json, data));
 }
 
 template<typename Return, typename Arg, Return (*)(Arg)> struct FunctionExists;
 
 template<typename T>
-class Args<Serialize, T>
+class Context<Serialize, T>
 {
 public:
     typedef QJsonValue &JsonRef;
@@ -48,27 +48,27 @@ public:
     DataRef data;
     typedef ObjectMapping<Serialize> ObjectMappingType;
 
-    Args(QJsonValue &json, const T &data)
+    Context(QJsonValue &json, const T &data)
         : json(json), data(data)
     {
     }
 
-    Args(const T &data, QJsonValue &json)
+    Context(const T &data, QJsonValue &json)
         : json(json), data(data)
     {
     }
 
-    Args(const Args &rhs)
+    Context(const Context &rhs)
         : json(rhs.json), data(rhs.data)
     {
     }
 
 private:
-    Args &operator =(const Args &) Q_DECL_EQ_DELETE;
+    Context &operator =(const Context &) Q_DECL_EQ_DELETE;
 };
 
 template<typename T>
-class Args<Deserialize, T>
+class Context<Deserialize, T>
 {
 public:
     typedef const QJsonValue &JsonRef;
@@ -77,23 +77,23 @@ public:
     DataRef data;
     typedef ObjectMapping<Deserialize> ObjectMappingType;
 
-    Args(const QJsonValue &json, T &data)
+    Context(const QJsonValue &json, T &data)
         : json(json), data(data)
     {
     }
 
-    Args(T &data, const QJsonValue &json)
+    Context(T &data, const QJsonValue &json)
         : json(json), data(data)
     {
     }
 
-    Args(const Args &rhs)
+    Context(const Context &rhs)
         : json(rhs.json), data(rhs.data)
     {
     }
 
 private:
-    Args &operator =(const Args &) Q_DECL_EQ_DELETE;
+    Context &operator =(const Context &) Q_DECL_EQ_DELETE;
 };
 
 inline bool toQString(const QString &value, QString &out)
@@ -450,9 +450,9 @@ private:
 };
 
 template<Action action, typename T>
-class ObjectMapArgs : public ObjectMapping<action>
+class ObjectContext : public ObjectMapping<action>
 {
-    Q_DISABLE_COPY(ObjectMapArgs)
+    Q_DISABLE_COPY(ObjectContext)
 
 public:
 
@@ -460,7 +460,7 @@ public:
     using ObjectMapping<action>::mapGetSet;
     using ObjectMapping<action>::mapQProperty;
 
-    typename Args<action, T>::DataRef data;
+    typename Context<action, T>::DataRef data;
 
     template<typename GetterReturn, typename SetterReturn, typename SetterArgument>
     bool mapGetSet(const QString &key,
@@ -515,286 +515,286 @@ public:
         return ObjectMapping<action>::template mapQProperty<AttributeType>(&data, propertyName, defaultValue);
     }
 
-    ObjectMapArgs(const Args<action, T> &args)
-        : ObjectMapping<action>(args.json), data(args.data)
+    ObjectContext(const Context<action, T> &ctx)
+        : ObjectMapping<action>(ctx.json), data(ctx.data)
     {
     }
 };
 
 template<Action action, typename T>
-void mapObject(ObjectMapArgs<action, T> &);
+void mapObject(ObjectContext<action, T> &);
 
 template<Action action, typename T>
-bool mapValueImpl(const Args<action, T> &args,
-                  FunctionExists<bool, const Args<action, T> &, &T::mapToJson> *)
+bool mapValueImpl(const Context<action, T> &ctx,
+                  FunctionExists<bool, const Context<action, T> &, &T::mapToJson> *)
 {
-    return T::mapToJson(args);
+    return T::mapToJson(ctx);
 }
 
 template<Action action, typename T>
-bool mapValueImpl(const Args<action, T> &args,
-                  FunctionExists<void, ObjectMapArgs<action, T> &, &T::mapToJson> *)
+bool mapValueImpl(const Context<action, T> &ctx,
+                  FunctionExists<void, ObjectContext<action, T> &, &T::mapToJson> *)
 {
-    ObjectMapArgs<action, T> o(args);
+    ObjectContext<action, T> o(ctx);
     T::mapToJson(o);
     return o.good;
 }
 
 template<Action action, typename T>
-bool mapValueImpl(const Args<action, T> &args, ...)
+bool mapValueImpl(const Context<action, T> &ctx, ...)
 {
-    ObjectMapArgs<action, T> o(args);
+    ObjectContext<action, T> o(ctx);
     mapObject(o);
     return o.good;
 }
 
 template<Action action, typename T>
-bool mapValue(const Args<action, T> &args)
+bool mapValue(const Context<action, T> &ctx)
 {
-    return mapValueImpl<action, T>(args, Q_NULLPTR);
+    return mapValueImpl<action, T>(ctx, Q_NULLPTR);
 }
 
 template<typename T>
-bool mapString(const Args<Deserialize, T> &args)
+bool mapString(const Context<Deserialize, T> &ctx)
 {
-    if (!args.json.isString()) {
+    if (!ctx.json.isString()) {
         return false;
     }
-    return fromQString(args.json.toString(), args.data);
+    return fromQString(ctx.json.toString(), ctx.data);
 }
 
 template<typename T>
-bool mapString(const Args<Serialize, T> &args)
+bool mapString(const Context<Serialize, T> &ctx)
 {
     QString asString;
-    if (!toQString(args.data, asString)) {
+    if (!toQString(ctx.data, asString)) {
         return false;
     }
-    args.json = QJsonValue(asString);
+    ctx.json = QJsonValue(asString);
     return true;
 }
 
 template<typename T>
-bool mapBool(const Args<Deserialize, T> &args)
+bool mapBool(const Context<Deserialize, T> &ctx)
 {
-    if (!args.json.isString()) {
+    if (!ctx.json.isString()) {
         return false;
     }
-    args.data = args.json.toBool();
+    ctx.data = ctx.json.toBool();
     return true;
 }
 
 template<typename T>
-bool mapBool(const Args<Serialize, T> &args)
+bool mapBool(const Context<Serialize, T> &ctx)
 {
-    args.json = QJsonValue(static_cast<bool>(args.data));
+    ctx.json = QJsonValue(static_cast<bool>(ctx.data));
     return true;
 }
 
 template<typename T>
-bool mapNumeric(const Args<Deserialize, T> &args)
+bool mapNumeric(const Context<Deserialize, T> &ctx)
 {
-    if (!args.json.isDouble()) {
+    if (!ctx.json.isDouble()) {
         return false;
     }
-    return fromDouble(args.json.toDouble(), args.data);
+    return fromDouble(ctx.json.toDouble(), ctx.data);
 }
 
 template<typename T>
-bool mapNumeric(const Args<Serialize, T> &args)
+bool mapNumeric(const Context<Serialize, T> &ctx)
 {
     double value;
-    if (!toDouble(args.data, value)) {
+    if (!toDouble(ctx.data, value)) {
         return false;
     }
-    args.json = QJsonValue(value);
+    ctx.json = QJsonValue(value);
     return true;
 }
 
 template<Action action>
-inline bool mapValue(const Args<action, bool> &args)
+inline bool mapValue(const Context<action, bool> &ctx)
 {
-    return mapBool(args);
+    return mapBool(ctx);
 }
 
 template<Action action>
-inline bool mapValue(const Args<action, QString> &args)
+inline bool mapValue(const Context<action, QString> &ctx)
 {
-    return mapString(args);
+    return mapString(ctx);
 }
 
 template<Action action>
-inline bool mapValue(const Args<action, QByteArray> &args)
+inline bool mapValue(const Context<action, QByteArray> &ctx)
 {
-    return mapString(args);
+    return mapString(ctx);
 }
 
 template<Action action>
-inline bool mapValue(const Args<action, std::string> &args)
+inline bool mapValue(const Context<action, std::string> &ctx)
 {
-    return mapString(args);
+    return mapString(ctx);
 }
 
 template<Action action>
-inline bool mapValue(const Args<action, std::wstring> &args)
+inline bool mapValue(const Context<action, std::wstring> &ctx)
 {
-    return mapString(args);
+    return mapString(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, int> &args)
+bool mapValue(const Context<action, int> &ctx)
 {
-    return mapNumeric(args);
+    return mapNumeric(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, short> &args)
+bool mapValue(const Context<action, short> &ctx)
 {
-    return mapNumeric(args);
+    return mapNumeric(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, long long> &args)
+bool mapValue(const Context<action, long long> &ctx)
 {
-    return mapNumeric(args);
+    return mapNumeric(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, unsigned int> &args)
+bool mapValue(const Context<action, unsigned int> &ctx)
 {
-    return mapNumeric(args);
+    return mapNumeric(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, unsigned short> &args)
+bool mapValue(const Context<action, unsigned short> &ctx)
 {
-    return mapNumeric(args);
+    return mapNumeric(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, unsigned long long> &args)
+bool mapValue(const Context<action, unsigned long long> &ctx)
 {
-    return mapNumeric(args);
+    return mapNumeric(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, float> &args)
+bool mapValue(const Context<action, float> &ctx)
 {
-    return mapNumeric(args);
+    return mapNumeric(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, double> &args)
+bool mapValue(const Context<action, double> &ctx)
 {
-    return mapNumeric(args);
+    return mapNumeric(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, long double> &args)
+bool mapValue(const Context<action, long double> &ctx)
 {
-    return mapNumeric(args);
+    return mapNumeric(ctx);
 }
 
 template<>
-inline bool mapValue(const Args<Serialize, QVariant> &args)
+inline bool mapValue(const Context<Serialize, QVariant> &ctx)
 {
-    args.json = QJsonValue::fromVariant(args.data);
+    ctx.json = QJsonValue::fromVariant(ctx.data);
     return true;
 }
 
 template<>
-inline bool mapValue(const Args<Deserialize, QVariant> &args)
+inline bool mapValue(const Context<Deserialize, QVariant> &ctx)
 {
-    args.data = args.json.toVariant();
+    ctx.data = ctx.json.toVariant();
     return true;
 }
 
 template<typename Container>
-bool mapSequence(const Args<Serialize, Container> &args)
+bool mapSequence(const Context<Serialize, Container> &ctx)
 {
     QJsonArray array;
-    Q_FOREACH (const typename Container::value_type &v, args.data) {
+    Q_FOREACH (const typename Container::value_type &v, ctx.data) {
         QJsonValue json;
         if (!serialize(json, v)) {
             return false;
         }
         array.append(json);
     }
-    args.json = array;
+    ctx.json = array;
     return true;
 }
 
 template<typename Container>
-bool mapSequence(const Args<Deserialize, Container> &args)
+bool mapSequence(const Context<Deserialize, Container> &ctx)
 {
-    if (!args.json.isArray()) {
+    if (!ctx.json.isArray()) {
         return false;
     }
     Container container;
-    Q_FOREACH (const QJsonValue &v, args.json.toArray()) {
+    Q_FOREACH (const QJsonValue &v, ctx.json.toArray()) {
         typename Container::value_type item;
         if (!deserialize(v, item)) {
             return false;
         }
         container.push_back(item);
     }
-    args.data.swap(container);
+    ctx.data.swap(container);
     return true;
 }
 
 template<Action action, typename T, typename Allocator>
-bool mapValue(const Args<action, std::list<T, Allocator> > &args)
+bool mapValue(const Context<action, std::list<T, Allocator> > &ctx)
 {
-    return mapSequence(args);
+    return mapSequence(ctx);
 }
 
 template<Action action, typename T, typename Allocator>
-bool mapValue(const Args<action, std::vector<T, Allocator> > &args)
+bool mapValue(const Context<action, std::vector<T, Allocator> > &ctx)
 {
-    return mapSequence(args);
+    return mapSequence(ctx);
 }
 
 template<Action action, typename T>
-bool mapValue(const Args<action, QList<T> > &args)
+bool mapValue(const Context<action, QList<T> > &ctx)
 {
-    return mapSequence(args);
+    return mapSequence(ctx);
 }
 
 template<Action action, typename T>
-bool mapValue(const Args<action, QVector<T> > &args)
+bool mapValue(const Context<action, QVector<T> > &ctx)
 {
-    return mapSequence(args);
+    return mapSequence(ctx);
 }
 
 template<Action action>
-bool mapValue(const Args<action, QStringList> &args)
+bool mapValue(const Context<action, QStringList> &ctx)
 {
-    return mapSequence(args);
+    return mapSequence(ctx);
 }
 
 template<typename Pair>
-bool mapPair(const Args<Serialize, Pair> &args)
+bool mapPair(const Context<Serialize, Pair> &ctx)
 {
     QJsonArray array;
     QJsonValue first, second;
-    if (!serialize(first, args.data.first) ||
-            !serialize(second, args.data.second))
+    if (!serialize(first, ctx.data.first) ||
+            !serialize(second, ctx.data.second))
     {
         return false;
     }
     array.push_back(first);
     array.push_back(second);
-    args.json = array;
+    ctx.json = array;
     return true;
 }
 
 template<typename Pair>
-bool mapPair(const Args<Deserialize, Pair> &args)
+bool mapPair(const Context<Deserialize, Pair> &ctx)
 {
-    if (!args.json.isArray()) {
+    if (!ctx.json.isArray()) {
         return false;
     }
-    QJsonArray array(args.json.toArray());
+    QJsonArray array(ctx.json.toArray());
     if (array.size() != 2) {
         return false;
     }
@@ -802,20 +802,20 @@ bool mapPair(const Args<Deserialize, Pair> &args)
     if (!deserialize(array[0], newData.first) || !deserialize(array[1], newData.second)) {
         return false;
     }
-    args.data = newData;
+    ctx.data = newData;
     return true;
 }
 
 template<Action action, typename First, typename Second>
-bool mapValue(const Args<action, std::pair<First, Second> > &args)
+bool mapValue(const Context<action, std::pair<First, Second> > &ctx)
 {
-    return mapPair(args);
+    return mapPair(ctx);
 }
 
 template<Action action, typename First, typename Second>
-bool mapValue(const Args<action, QPair<First, Second> > &args)
+bool mapValue(const Context<action, QPair<First, Second> > &ctx)
 {
-    return mapPair(args);
+    return mapPair(ctx);
 }
 
 template<typename Map>
@@ -871,10 +871,10 @@ struct QtMapTraits
 };
 
 template<typename Traits>
-bool mapAssociative(const Args<Serialize, typename Traits::Container> &args)
+bool mapAssociative(const Context<Serialize, typename Traits::Container> &ctx)
 {
     QJsonObject object;
-    for (typename Traits::Iterator i = args.data.begin(); i != args.data.end(); ++i) {
+    for (typename Traits::Iterator i = ctx.data.begin(); i != ctx.data.end(); ++i) {
         QJsonValue keyJson;
         if (!serialize(keyJson, Traits::key(i)) || !keyJson.isString()) {
             return false;
@@ -889,18 +889,18 @@ bool mapAssociative(const Args<Serialize, typename Traits::Container> &args)
         }
         object.insert(keyString, valueJson);
     }
-    args.json = object;
+    ctx.json = object;
     return true;
 }
 
 template<typename Traits>
-bool mapAssociative(const Args<Deserialize, typename Traits::Container> &args)
+bool mapAssociative(const Context<Deserialize, typename Traits::Container> &ctx)
 {
-    if (!args.json.isObject()) {
+    if (!ctx.json.isObject()) {
         return false;
     }
     typename Traits::Container newData;
-    QJsonObject object(args.json.toObject());
+    QJsonObject object(ctx.json.toObject());
     for (QJsonObject::ConstIterator i = object.begin(); i != object.end(); ++i) {
         typename Traits::KeyType key;
         if (!deserialize(QJsonValue(i.key()), key)) {
@@ -915,26 +915,26 @@ bool mapAssociative(const Args<Deserialize, typename Traits::Container> &args)
         }
         Traits::insert(newData, key, value);
     }
-    args.data.swap(newData);
+    ctx.data.swap(newData);
     return true;
 }
 
 template<Action action, typename Key, typename Value>
-bool mapValue(const Args<action, QMap<Key, Value> > &args)
+bool mapValue(const Context<action, QMap<Key, Value> > &ctx)
 {
-    return mapAssociative<QtMapTraits<QMap<Key, Value> > >(args);
+    return mapAssociative<QtMapTraits<QMap<Key, Value> > >(ctx);
 }
 
 template<Action action, typename Key, typename Value>
-bool mapValue(const Args<action, QHash<Key, Value> > &args)
+bool mapValue(const Context<action, QHash<Key, Value> > &ctx)
 {
-    return mapAssociative<QtMapTraits<QHash<Key, Value> > >(args);
+    return mapAssociative<QtMapTraits<QHash<Key, Value> > >(ctx);
 }
 
 template<Action action, typename Key, typename Value, typename Predicate, typename Allocator>
-bool mapValue(const Args<action, std::map<Key, Value, Predicate, Allocator> > &args)
+bool mapValue(const Context<action, std::map<Key, Value, Predicate, Allocator> > &ctx)
 {
-    return mapAssociative<StdMapTraits<std::map<Key, Value, Predicate, Allocator> > >(args);
+    return mapAssociative<StdMapTraits<std::map<Key, Value, Predicate, Allocator> > >(ctx);
 }
 
 template<typename Container>
@@ -950,26 +950,26 @@ size_t arraySize(T (&)[N])
 }
 
 template<typename T, typename StringArray>
-bool mapEnum(const Args<Serialize, T> &args, const StringArray &values)
+bool mapEnum(const Context<Serialize, T> &ctx, const StringArray &values)
 {
-    if (args.data >= arraySize(values)) {
+    if (ctx.data >= arraySize(values)) {
         return false;
     }
-    args.json = QJsonValue(QString(values[args.data]));
+    ctx.json = QJsonValue(QString(values[ctx.data]));
     return true;
 }
 
 template<typename T, typename StringArray>
-bool mapEnum(const Args<Deserialize, T> &args, const StringArray &values)
+bool mapEnum(const Context<Deserialize, T> &ctx, const StringArray &values)
 {
-    if (!args.json.isString()) {
+    if (!ctx.json.isString()) {
         return false;
     }
     size_t n = arraySize(values);
-    QString stringValue(args.json.toString());
+    QString stringValue(ctx.json.toString());
     for (size_t i = 0; i < n; i++) {
         if (stringValue == values[i]) {
-            args.data = static_cast<T>(i);
+            ctx.data = static_cast<T>(i);
             return true;
         }
     }
@@ -977,38 +977,38 @@ bool mapEnum(const Args<Deserialize, T> &args, const StringArray &values)
 }
 
 template<typename T>
-bool mapEnum(const Args<Serialize, T> &args, const QMetaEnum &metaEnum)
+bool mapEnum(const Context<Serialize, T> &ctx, const QMetaEnum &metaEnum)
 {
-    const char *value = metaEnum.valueToKey(args.data);
+    const char *value = metaEnum.valueToKey(ctx.data);
     if (!value) {
         return false;
     }
-    args.json = QJsonValue(QString::fromUtf8(value));
+    ctx.json = QJsonValue(QString::fromUtf8(value));
     return true;
 }
 
 template<typename T>
-bool mapEnum(const Args<Deserialize, T> &args, const QMetaEnum &metaEnum)
+bool mapEnum(const Context<Deserialize, T> &ctx, const QMetaEnum &metaEnum)
 {
-    if (!args.json.isString()) {
+    if (!ctx.json.isString()) {
         return false;
     }
     bool ok = false;
-    int intValue = metaEnum.keyToValue(args.json.toString().toUtf8().constData(), &ok);
+    int intValue = metaEnum.keyToValue(ctx.json.toString().toUtf8().constData(), &ok);
     if (ok) {
-        args.data = static_cast<T>(intValue);
+        ctx.data = static_cast<T>(intValue);
     }
     return ok;
 }
 
 template<Action action, typename T>
-bool mapEnum(const Args<action, T> &args, const QMetaObject &metaObject, const char *enumName)
+bool mapEnum(const Context<action, T> &ctx, const QMetaObject &metaObject, const char *enumName)
 {
     int enumIndex = metaObject.indexOfEnumerator(enumName);
     if (enumIndex < 0) {
         return false;
     }
-    return mapEnum(args, metaObject.enumerator(enumIndex));
+    return mapEnum(ctx, metaObject.enumerator(enumIndex));
 }
 
 }

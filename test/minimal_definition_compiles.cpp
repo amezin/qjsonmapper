@@ -11,18 +11,18 @@ class TestClass
 namespace qjsonserialize {
 
 template<Action action>
-bool map(const Args<action, TestClass> &args)
+bool map(const Context<action, TestClass> &ctx)
 {
-    ObjectMapping<action> objectMapping(args.json);
-    return objectMapping.map("field", args.data.field) &&
-            objectMapping.map("map", args.data.map);
+    ObjectMapping<action> objectMapping(ctx.json);
+    return objectMapping.map("field", ctx.data.field) &&
+            objectMapping.map("map", ctx.data.map);
 }
 
 template<Action action>
-void mapObject(ObjectMapArgs<action, TestClass> &args)
+void mapObject(ObjectContext<action, TestClass> &ctx)
 {
-    args.map("field", args.data.field) &&
-            args.map("map", args.data.map);
+    ctx.map("field", ctx.data.field) &&
+            ctx.map("map", ctx.data.map);
 }
 
 }
