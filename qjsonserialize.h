@@ -36,6 +36,8 @@ bool deserialize(const QJsonValue &json, Data &data)
     return mapValue(Args<Deserialize, Data>(json, data));
 }
 
+template<typename Return, typename Arg, Return (*)(Arg)> struct FunctionExists;
+
 template<typename T>
 class Args<Serialize, T>
 {
@@ -523,11 +525,33 @@ template<Action action, typename T>
 void mapObject(ObjectMapArgs<action, T> &);
 
 template<Action action, typename T>
+bool mapValueImpl(const Args<action, T> &args,
+                  FunctionExists<bool, const Args<action, T> &, &T::mapToJson> *)
+{
+    return T::mapToJson(args);
+}
+
+template<Action action, typename T>
+bool mapValueImpl(const Args<action, T> &args,
+                  FunctionExists<void, ObjectMapArgs<action, T> &, &T::mapToJson> *)
+{
+    ObjectMapArgs<action, T> o(args);
+    T::mapToJson(o);
+    return o.good;
+}
+
+template<Action action, typename T>
+bool mapValueImpl(const Args<action, T> &args, ...)
+{
+    ObjectMapArgs<action, T> o(args);
+    mapObject(o);
+    return o.good;
+}
+
+template<Action action, typename T>
 bool mapValue(const Args<action, T> &args)
 {
-    ObjectMapArgs<action, T> a(args);
-    mapObject(a);
-    return a.good;
+    return mapValueImpl<action, T>(args, Q_NULLPTR);
 }
 
 template<typename T>
