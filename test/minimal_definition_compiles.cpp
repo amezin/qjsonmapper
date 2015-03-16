@@ -27,7 +27,7 @@ void mapObject(ObjectContext<action, TestClass> &ctx)
 
 }
 
-int minimal_definition_compiles(int, char *[])
+int main(int, char *[])
 {
     return 0;
 }
