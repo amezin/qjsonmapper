@@ -5,9 +5,10 @@ struct SomethingComplex2
     int a;
     std::string s;
     QString s2;
+    float f;
 
     SomethingComplex2()
-        : a(42), s("std::string"), s2(QStringLiteral("QString")), getSet(0)
+        : a(42), s("std::string"), s2(QStringLiteral("QString")), f(0.0f), getSet(0)
     {
     }
 
@@ -45,7 +46,8 @@ void mapObject(ObjectMapArgs<action, SomethingComplex2> &args)
             args.mapField("s", args.data.s, args.data.s) &&
             args.mapField("s2", args.data.s2) &&
             args.mapGetSet("getSet", args.data, &SomethingComplex2::get, &SomethingComplex2::set) &&
-            args.mapGetSet("getSet2", &SomethingComplex2::get2, &SomethingComplex2::set2);
+            args.mapGetSet("getSet2", &SomethingComplex2::get2, &SomethingComplex2::set2) &&
+            args.mapField("f", args.data.f, 0.0f);
 }
 
 }
