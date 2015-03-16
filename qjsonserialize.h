@@ -44,7 +44,7 @@ public:
     JsonRef json;
     typedef const T &DataRef;
     DataRef data;
-    typedef ObjectMapping<Deserialize> ObjectMappingType;
+    typedef ObjectMapping<Serialize> ObjectMappingType;
 
     Args(QJsonValue &json, const T &data)
         : json(json), data(data)
