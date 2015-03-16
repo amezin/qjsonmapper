@@ -952,7 +952,7 @@ size_t arraySize(T (&)[N])
 template<typename T, typename StringArray>
 bool mapEnum(const Context<Serialize, T> &ctx, const StringArray &values)
 {
-    if (ctx.data >= arraySize(values)) {
+    if (static_cast<size_t>(ctx.data) >= arraySize(values)) {
         return false;
     }
     ctx.json = QJsonValue(QString(values[ctx.data]));
