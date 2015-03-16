@@ -263,6 +263,24 @@ public:
         return mapQProperty<AttributeType>(key, object, propertyName);
     }
 
+    template<typename AttributeType>
+    bool mapQProperty(const QObject *object, const char *propertyName)
+    {
+        return mapQProperty<AttributeType>(QLatin1String(propertyName), object, propertyName);
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QObject *object, const char *propertyName, const AttributeType &)
+    {
+        return mapQProperty<AttributeType>(object, propertyName);
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(const QObject *object, const char *propertyName, const QJsonValue &)
+    {
+        return mapQProperty<AttributeType>(object, propertyName);
+    }
+
     ~ObjectMapping()
     {
         if (good) {
@@ -397,6 +415,24 @@ public:
         return good;
     }
 
+    template<typename AttributeType>
+    bool mapQProperty(QObject *object, const char *propertyName)
+    {
+        return mapQProperty<AttributeType>(QLatin1String(propertyName), object, propertyName);
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(QObject *object, const char *propertyName, const AttributeType &defaultValue)
+    {
+        return mapQProperty<AttributeType>(QLatin1String(propertyName), object, propertyName, defaultValue);
+    }
+
+    template<typename AttributeType>
+    bool mapQProperty(QObject *object, const char *propertyName, const QJsonValue &defaultValue)
+    {
+        return mapQProperty<AttributeType>(QLatin1String(propertyName), object, propertyName, defaultValue);
+    }
+
 private:
     template<typename T>
     struct RemoveConstRef
@@ -457,6 +493,24 @@ public:
     bool mapQProperty(const QString &key, const char *propertyName, const QJsonValue &defaultValue)
     {
         return ObjectMapping<action>::template mapQProperty<AttributeType>(key, &data, propertyName, defaultValue);
+    }
+
+    template<typename AttributeType>
+    bool mapQProp(const char *propertyName)
+    {
+        return ObjectMapping<action>::template mapQProperty<AttributeType>(&data, propertyName);
+    }
+
+    template<typename AttributeType>
+    bool mapQProp(const char *propertyName, const AttributeType &defaultValue)
+    {
+        return ObjectMapping<action>::template mapQProperty<AttributeType>(&data, propertyName, defaultValue);
+    }
+
+    template<typename AttributeType>
+    bool mapQProp(const char *propertyName, const QJsonValue &defaultValue)
+    {
+        return ObjectMapping<action>::template mapQProperty<AttributeType>(&data, propertyName, defaultValue);
     }
 
     ObjectMapArgs(const Args<action, T> &args)
