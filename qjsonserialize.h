@@ -27,13 +27,15 @@ namespace qjsonserialize
 template<typename Data>
 bool serialize(QJsonValue &json, const Data &data)
 {
-    return mapValue(Context<Serialize, Data>(json, data));
+    Context<Serialize, Data> ctx(json, data);
+    return mapValue(ctx);
 }
 
 template<typename Data>
 bool deserialize(const QJsonValue &json, Data &data)
 {
-    return mapValue(Context<Deserialize, Data>(json, data));
+    Context<Deserialize, Data> ctx(json, data);
+    return mapValue(ctx);
 }
 
 template<typename Return, typename Arg, Return (*)(Arg)> struct FunctionExists;
@@ -62,9 +64,6 @@ public:
         : json(rhs.json), data(rhs.data)
     {
     }
-
-private:
-    Context &operator =(const Context &) Q_DECL_EQ_DELETE;
 };
 
 template<typename T>
@@ -91,9 +90,6 @@ public:
         : json(rhs.json), data(rhs.data)
     {
     }
-
-private:
-    Context &operator =(const Context &) Q_DECL_EQ_DELETE;
 };
 
 inline bool toQString(const QString &value, QString &out)
@@ -188,8 +184,6 @@ inline bool fromDouble(double value, float &out)
 template<>
 class ObjectMapping<Serialize>
 {
-    Q_DISABLE_COPY(ObjectMapping)
-
 public:
     QJsonValue &jsonValue;
     QJsonObject jsonObject;
@@ -294,8 +288,6 @@ public:
 template<>
 class ObjectMapping<Deserialize>
 {
-    Q_DISABLE_COPY(ObjectMapping)
-
 public:
     const QJsonValue &jsonValue;
     QJsonObject jsonObject;
@@ -452,8 +444,6 @@ private:
 template<Action action, typename T>
 class ObjectContext : public ObjectMapping<action>
 {
-    Q_DISABLE_COPY(ObjectContext)
-
 public:
 
     using ObjectMapping<action>::mapField;
