@@ -41,3 +41,23 @@ template<Action action>
 class ObjectMapping;
 
 }
+
+#define QJSONSERIALIZE_MAPTOJSON_EXTERN(Type) \
+    namespace qjsonserialize { \
+        extern template bool mapValue<qjsonserialize::Serialize>(const qjsonserialize::Context<qjsonserialize::Serialize, Type> &); \
+        extern template bool mapValue<qjsonserialize::Deserialize>(const qjsonserialize::Context<qjsonserialize::Deserialize, Type> &); \
+    }
+
+#define QJSONSERIALIZE_MAPTOJSON_OBJECT_EXTERN(Type) \
+    namespace qjsonserialize { \
+        extern template void mapObject<qjsonserialize::Serialize>(qjsonserialize::ObjectContext<qjsonserialize::Serialize, Type> &); \
+        extern template void mapObject<qjsonserialize::Deserialize>(qjsonserialize::ObjectContext<qjsonserialize::Deserialize, Type> &); \
+    }
+
+#define QJSONSERIALIZE_MAPTOJSON_OBJECT_MEM_EXTERN(Class) \
+    extern template void Class::mapToJson<qjsonserialize::Serialize>(qjsonserialize::ObjectContext<qjsonserialize::Serialize, Class> &); \
+    extern template void Class::mapToJson<qjsonserialize::Deserialize>(qjsonserialize::ObjectContext<qjsonserialize::Deserialize, Class> &);
+
+#define QJSONSERIALIZE_MAPTOJSON_MEM_EXTERN(Class) \
+    extern template bool Class::mapToJson<qjsonserialize::Serialize>(const qjsonserialize::Context<qjsonserialize::Serialize, Class> &); \
+    extern template bool Class::mapToJson<qjsonserialize::Deserialize>(const qjsonserialize::Context<qjsonserialize::Deserialize, Class> &);
