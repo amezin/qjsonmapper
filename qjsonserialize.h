@@ -38,8 +38,6 @@ bool deserialize(const QJsonValue &json, Data &data)
     return mapValue(ctx);
 }
 
-template<typename Return, typename Arg, Return (*)(Arg)> struct FunctionExists;
-
 template<typename T>
 class Context<Serialize, T>
 {
@@ -285,6 +283,23 @@ public:
     }
 };
 
+namespace util
+{
+
+template<typename T>
+struct RemoveConstRef
+{
+    typedef T Type;
+};
+
+template<typename T>
+struct RemoveConstRef<const T> : public RemoveConstRef<T> {};
+
+template<typename T>
+struct RemoveConstRef<T&> : public RemoveConstRef<T> {};
+
+}
+
 template<>
 class ObjectMapping<Deserialize>
 {
@@ -334,7 +349,7 @@ public:
                    GetterReturn (Class::*)() const,
                    void (Class::*setter)(AttributeType))
     {
-        typename RemoveConstRef<AttributeType>::Type value;
+        typename util::RemoveConstRef<AttributeType>::Type value;
         if (mapField(key, value)) {
             (object.*setter)(value);
         }
@@ -347,7 +362,7 @@ public:
                    void (Class::*setter)(AttributeType),
                    const Default &defaultValue)
     {
-        typename RemoveConstRef<AttributeType>::Type value;
+        typename util::RemoveConstRef<AttributeType>::Type value;
         if (mapField(key, value, defaultValue)) {
             (object.*setter)(value);
         }
@@ -359,7 +374,7 @@ public:
                    GetterReturn (Class::*)() const,
                    bool (Class::*setter)(AttributeType))
     {
-        typename RemoveConstRef<AttributeType>::Type value;
+        typename util::RemoveConstRef<AttributeType>::Type value;
         if (mapField(key, value)) {
             good = (object->*setter)(value);
         }
@@ -372,7 +387,7 @@ public:
                    bool (Class::*setter)(AttributeType),
                    const Default &defaultValue)
     {
-        typename RemoveConstRef<AttributeType>::Type value;
+        typename util::RemoveConstRef<AttributeType>::Type value;
         if (mapField(key, value, defaultValue)) {
             good = (object->*setter)(value);
         }
@@ -426,19 +441,6 @@ public:
     {
         return mapQProperty<AttributeType>(QLatin1String(propertyName), object, propertyName, defaultValue);
     }
-
-private:
-    template<typename T>
-    struct RemoveConstRef
-    {
-        typedef T Type;
-    };
-
-    template<typename T>
-    struct RemoveConstRef<const T> : public RemoveConstRef<T> {};
-
-    template<typename T>
-    struct RemoveConstRef<T&> : public RemoveConstRef<T> {};
 };
 
 template<Action action, typename T>
@@ -514,16 +516,21 @@ public:
 template<Action action, typename T>
 void mapObject(ObjectContext<action, T> &);
 
+namespace util
+{
+template<typename Return, typename Arg, Return (*)(Arg)> struct FunctionExists;
+}
+
 template<Action action, typename T>
 bool mapValueImpl(const Context<action, T> &ctx,
-                  FunctionExists<bool, const Context<action, T> &, &T::mapToJson> *)
+                  util::FunctionExists<bool, const Context<action, T> &, &T::mapToJson> *)
 {
     return T::mapToJson(ctx);
 }
 
 template<Action action, typename T>
 bool mapValueImpl(const Context<action, T> &ctx,
-                  FunctionExists<void, ObjectContext<action, T> &, &T::mapToJson> *)
+                  util::FunctionExists<void, ObjectContext<action, T> &, &T::mapToJson> *)
 {
     ObjectContext<action, T> o(ctx);
     T::mapToJson(o);
@@ -927,6 +934,9 @@ bool mapValue(const Context<action, std::map<Key, Value, Predicate, Allocator> >
     return mapAssociative<StdMapTraits<std::map<Key, Value, Predicate, Allocator> > >(ctx);
 }
 
+namespace util
+{
+
 template<typename Container>
 size_t arraySize(const Container &container)
 {
@@ -939,10 +949,12 @@ size_t arraySize(T (&)[N])
     return N;
 }
 
+}
+
 template<typename T, typename StringArray>
 bool mapEnum(const Context<Serialize, T> &ctx, const StringArray &values)
 {
-    if (static_cast<size_t>(ctx.data) >= arraySize(values)) {
+    if (static_cast<size_t>(ctx.data) >= util::arraySize(values)) {
         return false;
     }
     ctx.json = QJsonValue(QString(values[ctx.data]));
@@ -955,7 +967,7 @@ bool mapEnum(const Context<Deserialize, T> &ctx, const StringArray &values)
     if (!ctx.json.isString()) {
         return false;
     }
-    size_t n = arraySize(values);
+    size_t n = util::arraySize(values);
     QString stringValue(ctx.json.toString());
     for (size_t i = 0; i < n; i++) {
         if (stringValue == values[i]) {
