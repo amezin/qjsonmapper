@@ -9,7 +9,9 @@ Build status on ancient GCC 4.4.7:
 
 Description
 -----------
-Converts complex data structures to QJsonValue and vice versa.
+Simple header-only library that converts complex data structures to QJsonValue and vice versa.
+
+Works on GCC 4.4 and Visual C++ 2008.
 
 License [![WTFPL](http://www.wtfpl.net/wp-content/uploads/2012/12/wtfpl-badge-4.png)](http://www.wtfpl.net/ "WTFPL")
 -------
