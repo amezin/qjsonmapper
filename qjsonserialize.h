@@ -48,17 +48,14 @@ public:
     DataRef data;
     typedef ObjectMapping<Serialize> ObjectMappingType;
 
-    Context(QJsonValue &json, const T &data)
+    template<typename T2>
+    Context(QJsonValue &json, const T2 &data)
         : json(json), data(data)
     {
     }
 
-    Context(const T &data, QJsonValue &json)
-        : json(json), data(data)
-    {
-    }
-
-    Context(const Context &rhs)
+    template<typename T2>
+    Context(const Context<Serialize, T2> &rhs)
         : json(rhs.json), data(rhs.data)
     {
     }
@@ -74,17 +71,14 @@ public:
     DataRef data;
     typedef ObjectMapping<Deserialize> ObjectMappingType;
 
-    Context(const QJsonValue &json, T &data)
+    template<typename T2>
+    Context(const QJsonValue &json, T2 &data)
         : json(json), data(data)
     {
     }
 
-    Context(T &data, const QJsonValue &json)
-        : json(json), data(data)
-    {
-    }
-
-    Context(const Context &rhs)
+    template<typename T2>
+    Context(const Context<Deserialize, T2> &rhs)
         : json(rhs.json), data(rhs.data)
     {
     }
@@ -179,16 +173,18 @@ inline bool fromDouble(double value, float &out)
     return true;
 }
 
+template<Action action>
+class ObjectMappingInterface;
+
 template<>
-class ObjectMapping<Serialize>
+class ObjectMappingInterface<Serialize>
 {
 public:
-    QJsonValue &jsonValue;
-    QJsonObject jsonObject;
-    bool good;
+    QJsonObject &jsonObject;
+    bool &good;
 
-    explicit ObjectMapping(QJsonValue &jsonValue)
-        : jsonValue(jsonValue), good(true)
+    ObjectMappingInterface(QJsonObject &jsonObject, bool &good)
+        : jsonObject(jsonObject), good(good)
     {
     }
 
@@ -275,12 +271,6 @@ public:
         return mapQProperty<AttributeType>(object, propertyName);
     }
 
-    ~ObjectMapping()
-    {
-        if (good) {
-            jsonValue = jsonObject;
-        }
-    }
 };
 
 namespace util
@@ -301,15 +291,14 @@ struct RemoveConstRef<T&> : public RemoveConstRef<T> {};
 }
 
 template<>
-class ObjectMapping<Deserialize>
+class ObjectMappingInterface<Deserialize>
 {
 public:
-    const QJsonValue &jsonValue;
-    QJsonObject jsonObject;
-    bool good;
+    const QJsonObject &jsonObject;
+    bool &good;
 
-    explicit ObjectMapping(const QJsonValue &jsonValue)
-        : jsonValue(jsonValue), jsonObject(jsonValue.toObject()), good(jsonValue.isObject())
+    ObjectMappingInterface(const QJsonObject &jsonObject, bool &good)
+        : jsonObject(jsonObject), good(good)
     {
     }
 
@@ -443,23 +432,70 @@ public:
     }
 };
 
-template<Action action, typename T>
-class ObjectContext : public ObjectMapping<action>
+template<>
+class ObjectMapping<Serialize> : public ObjectMappingInterface<Serialize>
 {
 public:
+    QJsonValue &jsonValue;
+    QJsonObject jsonObject;
+    bool good;
 
-    using ObjectMapping<action>::mapField;
-    using ObjectMapping<action>::mapGetSet;
-    using ObjectMapping<action>::mapQProperty;
+    using ObjectMappingInterface<Serialize>::mapField;
+    using ObjectMappingInterface<Serialize>::mapGetSet;
+    using ObjectMappingInterface<Serialize>::mapQProperty;
 
+    explicit ObjectMapping(QJsonValue &jsonValue)
+        : ObjectMappingInterface<Serialize>(jsonObject, good),
+          jsonValue(jsonValue),
+          good(true)
+    {
+    }
+
+    ~ObjectMapping()
+    {
+        if (good) {
+            jsonValue = jsonObject;
+        }
+    }
+};
+
+template<>
+class ObjectMapping<Deserialize> : public ObjectMappingInterface<Deserialize>
+{
+public:
+    const QJsonValue &jsonValue;
+    QJsonObject jsonObject;
+    bool good;
+
+    using ObjectMappingInterface<Deserialize>::mapField;
+    using ObjectMappingInterface<Deserialize>::mapGetSet;
+    using ObjectMappingInterface<Deserialize>::mapQProperty;
+
+    explicit ObjectMapping(const QJsonValue &jsonValue)
+        : ObjectMappingInterface<Deserialize>(jsonObject, good),
+          jsonValue(jsonValue),
+          jsonObject(jsonValue.toObject()),
+          good(jsonValue.isObject())
+    {
+    }
+};
+
+template<Action action, typename T>
+class ObjectContext : public ObjectMappingInterface<action>
+{
+public:
     typename Context<action, T>::DataRef data;
+
+    using ObjectMappingInterface<action>::mapField;
+    using ObjectMappingInterface<action>::mapGetSet;
+    using ObjectMappingInterface<action>::mapQProperty;
 
     template<typename GetterReturn, typename SetterReturn, typename SetterArgument>
     bool mapGetSet(const QString &key,
                    GetterReturn (T::*getter)() const,
                    SetterReturn (T::*setter)(SetterArgument))
     {
-        return ObjectMapping<action>::mapGetSet(key, data, getter, setter);
+        return ObjectMappingInterface<action>::mapGetSet(key, data, getter, setter);
     }
 
     template<typename GetterReturn, typename SetterReturn, typename SetterArgument, typename Default>
@@ -468,47 +504,53 @@ public:
                    SetterReturn (T::*setter)(SetterArgument),
                    const Default &defaultValue)
     {
-        return ObjectMapping<action>::mapGetSet(key, data, getter, setter, defaultValue);
+        return ObjectMappingInterface<action>::mapGetSet(key, data, getter, setter, defaultValue);
     }
 
     template<typename AttributeType>
     bool mapQProperty(const QString &key, const char *propertyName)
     {
-        return ObjectMapping<action>::template mapQProperty<AttributeType>(key, &data, propertyName);
+        return ObjectMappingInterface<action>::template mapQProperty<AttributeType>(key, &data, propertyName);
     }
 
     template<typename AttributeType>
     bool mapQProperty(const QString &key, const char *propertyName, const AttributeType &defaultValue)
     {
-        return ObjectMapping<action>::template mapQProperty<AttributeType>(key, &data, propertyName, defaultValue);
+        return ObjectMappingInterface<action>::template mapQProperty<AttributeType>(key, &data, propertyName, defaultValue);
     }
 
     template<typename AttributeType>
     bool mapQProperty(const QString &key, const char *propertyName, const QJsonValue &defaultValue)
     {
-        return ObjectMapping<action>::template mapQProperty<AttributeType>(key, &data, propertyName, defaultValue);
+        return ObjectMappingInterface<action>::template mapQProperty<AttributeType>(key, &data, propertyName, defaultValue);
     }
 
     template<typename AttributeType>
     bool mapQProp(const char *propertyName)
     {
-        return ObjectMapping<action>::template mapQProperty<AttributeType>(&data, propertyName);
+        return ObjectMappingInterface<action>::template mapQProperty<AttributeType>(&data, propertyName);
     }
 
     template<typename AttributeType>
     bool mapQProp(const char *propertyName, const AttributeType &defaultValue)
     {
-        return ObjectMapping<action>::template mapQProperty<AttributeType>(&data, propertyName, defaultValue);
+        return ObjectMappingInterface<action>::template mapQProperty<AttributeType>(&data, propertyName, defaultValue);
     }
 
     template<typename AttributeType>
     bool mapQProp(const char *propertyName, const QJsonValue &defaultValue)
     {
-        return ObjectMapping<action>::template mapQProperty<AttributeType>(&data, propertyName, defaultValue);
+        return ObjectMappingInterface<action>::template mapQProperty<AttributeType>(&data, propertyName, defaultValue);
     }
 
-    ObjectContext(const Context<action, T> &ctx)
-        : ObjectMapping<action>(ctx.json), data(ctx.data)
+    ObjectContext(typename Context<action, T>::DataRef data, const ObjectMappingInterface<action> &mapping)
+        : ObjectMappingInterface<action>(mapping.jsonObject, mapping.good), data(data)
+    {
+    }
+
+    template<typename T2>
+    ObjectContext(const ObjectContext<action, T2> &copy)
+        : ObjectMappingInterface<action>(copy.jsonObject, copy.good), data(copy.data)
     {
     }
 };
@@ -532,17 +574,19 @@ template<Action action, typename T>
 bool mapValueImpl(const Context<action, T> &ctx,
                   util::FunctionExists<void, ObjectContext<action, T> &, &T::mapToJson> *)
 {
-    ObjectContext<action, T> o(ctx);
+    ObjectMapping<action> mapping(ctx.json);
+    ObjectContext<action, T> o(ctx.data, mapping);
     T::mapToJson(o);
-    return o.good;
+    return mapping.good;
 }
 
 template<Action action, typename T>
 bool mapValueImpl(const Context<action, T> &ctx, ...)
 {
-    ObjectContext<action, T> o(ctx);
+    ObjectMapping<action> mapping(ctx.json);
+    ObjectContext<action, T> o(ctx.data, mapping);
     mapObject(o);
-    return o.good;
+    return mapping.good;
 }
 
 template<Action action, typename T>
