@@ -9,6 +9,7 @@
 #pragma once
 
 class QJsonValue;
+class QStringList;
 
 namespace qjsonserialize
 {
@@ -31,11 +32,13 @@ class ObjectContext;
 template<Action action, typename T>
 void mapObject(ObjectContext<action, T> &);
 
-template<typename Data>
-bool serialize(QJsonValue &json, const Data &data);
+typedef QStringList ErrorInfo;
 
 template<typename Data>
-bool deserialize(const QJsonValue &json, Data &data);
+bool serialize(QJsonValue &json, const Data &data, ErrorInfo &);
+
+template<typename Data>
+bool deserialize(const QJsonValue &json, Data &data, ErrorInfo &);
 
 template<Action action>
 class ObjectMapping;

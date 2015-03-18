@@ -12,7 +12,8 @@ private Q_SLOTS:
     {
         std::wstring s;
         QJsonValue json(QStringLiteral("Hello, World!"));
-        QVERIFY(qjsonserialize::deserialize(json, s));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::deserialize(json, s, e));
         QCOMPARE(s, std::wstring(L"Hello, World!"));
     }
 
@@ -20,7 +21,8 @@ private Q_SLOTS:
     {
         std::wstring s(L"Hello, World!");
         QJsonValue json;
-        QVERIFY(qjsonserialize::serialize(json, s));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::serialize(json, s, e));
         QVERIFY(json.isString());
         QCOMPARE(json.toString(), QStringLiteral("Hello, World!"));
     }

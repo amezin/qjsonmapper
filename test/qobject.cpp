@@ -46,7 +46,8 @@ void QObjectTest::serialize()
 {
     QObjectTest o;
     QJsonValue json;
-    QVERIFY(qjsonserialize::serialize(json, o));
+    qjsonserialize::ErrorInfo e;
+    QVERIFY(qjsonserialize::serialize(json, o, e));
     QVERIFY(json.isObject());
     QCOMPARE(json.toObject().value("get_set").toInt(), 42);
     QCOMPARE(json.toObject().value("property2").toString(),
@@ -60,9 +61,10 @@ void QObjectTest::deserialize()
 {
     QObjectTest o;
     QJsonObject json;
+    qjsonserialize::ErrorInfo e;
     json.insert("get_set", 123);
     json.insert("property3", 3.0);
-    QVERIFY(qjsonserialize::deserialize(json, o));
+    QVERIFY(qjsonserialize::deserialize(json, o, e));
     QCOMPARE(o.getSet, 123);
     QCOMPARE(o.property2, QStringLiteral("Default Value"));
     QCOMPARE(o.property3, 3.0);

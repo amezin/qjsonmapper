@@ -57,7 +57,8 @@ private Q_SLOTS:
         SerializableTest o;
         o.set(123);
         QJsonValue json;
-        QVERIFY(qjsonserialize::serialize(json, o));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::serialize(json, o, e));
         QVERIFY(json.isObject());
         QJsonObject object(json.toObject());
         QCOMPARE(object.value("a").toInt(), 42);
@@ -75,7 +76,8 @@ private Q_SLOTS:
         json.insert("s2", QStringLiteral("LOL"));
         json.insert("getSet", 1);
         json.insert("getSet2", QStringLiteral("Test"));
-        QVERIFY(qjsonserialize::deserialize(json, o));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::deserialize(json, o, e));
         QCOMPARE(o.a, 123);
         QCOMPARE(o.s, std::string("std::string"));
         QCOMPARE(o.s2, QStringLiteral("LOL"));

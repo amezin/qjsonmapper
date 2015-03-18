@@ -16,7 +16,8 @@ private Q_SLOTS:
         object["3"] = 3.0;
 
         QHash<QString, double> data;
-        QVERIFY(qjsonserialize::deserialize(object, data));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::deserialize(object, data, e));
         QCOMPARE(data.size(), 3);
 
         QCOMPARE(data["1"], 1.0);
@@ -32,7 +33,8 @@ private Q_SLOTS:
         data.insert("3", 3.0);
 
         QJsonValue json;
-        QVERIFY(qjsonserialize::serialize(json, data));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::serialize(json, data, e));
         QVERIFY(json.isObject());
 
         QJsonObject object(json.toObject());

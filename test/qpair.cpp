@@ -15,7 +15,8 @@ private Q_SLOTS:
         array.push_back(2);
 
         QPair<int, int> v;
-        QVERIFY(qjsonserialize::deserialize(array, v));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::deserialize(array, v, e));
 
         QCOMPARE(v.first, 1);
         QCOMPARE(v.second, 2);
@@ -28,7 +29,8 @@ private Q_SLOTS:
         v.second = 2;
 
         QJsonValue json;
-        QVERIFY(qjsonserialize::serialize(json, v));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::serialize(json, v, e));
         QVERIFY(json.isArray());
 
         QJsonArray array(json.toArray());

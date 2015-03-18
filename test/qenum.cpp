@@ -36,13 +36,14 @@ bool mapValue(const Context<action, QEnumTest::TestEnum> &ctx)
 void QEnumTest::serialize()
 {
     QJsonValue json;
-    QVERIFY(qjsonserialize::serialize(json, Third));
+    qjsonserialize::ErrorInfo e;
+    QVERIFY(qjsonserialize::serialize(json, Third, e));
     QVERIFY(json.isString());
     QCOMPARE(json.toString(), QStringLiteral("Third"));
-    QVERIFY(qjsonserialize::serialize(json, First));
+    QVERIFY(qjsonserialize::serialize(json, First, e));
     QVERIFY(json.isString());
     QCOMPARE(json.toString(), QStringLiteral("First"));
-    QVERIFY(qjsonserialize::serialize(json, Second));
+    QVERIFY(qjsonserialize::serialize(json, Second, e));
     QVERIFY(json.isString());
     QCOMPARE(json.toString(), QStringLiteral("Second"));
 }
@@ -51,16 +52,17 @@ void QEnumTest::deserialize()
 {
     QJsonValue json(QStringLiteral("Second"));
     TestEnum value;
-    QVERIFY(qjsonserialize::deserialize(json, value));
+    qjsonserialize::ErrorInfo e;
+    QVERIFY(qjsonserialize::deserialize(json, value, e));
     QCOMPARE(value, Second);
     json = QJsonValue(QStringLiteral("Second"));
-    QVERIFY(qjsonserialize::deserialize(json, value));
+    QVERIFY(qjsonserialize::deserialize(json, value, e));
     QCOMPARE(value, Second);
     json = QJsonValue(QStringLiteral("First"));
-    QVERIFY(qjsonserialize::deserialize(json, value));
+    QVERIFY(qjsonserialize::deserialize(json, value, e));
     QCOMPARE(value, First);
     json = QJsonValue(QStringLiteral("NonExistant"));
-    QVERIFY(!qjsonserialize::deserialize(json, value));
+    QVERIFY(!qjsonserialize::deserialize(json, value, e));
 }
 
 QTEST_MAIN(QEnumTest)

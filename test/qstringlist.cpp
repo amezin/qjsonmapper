@@ -16,7 +16,8 @@ private Q_SLOTS:
         v.push_back(QStringLiteral("c"));
 
         QJsonValue json;
-        QVERIFY(qjsonserialize::serialize(json, v));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::serialize(json, v, e));
         QVERIFY(json.isArray());
 
         QJsonArray array(json.toArray());
@@ -34,7 +35,8 @@ private Q_SLOTS:
         json.push_back(QStringLiteral("c"));
 
         QStringList v;
-        QVERIFY(qjsonserialize::deserialize(json, v));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::deserialize(json, v, e));
 
         QCOMPARE(json.size(), v.size());
         QCOMPARE(json.at(0).toString(), v[0]);

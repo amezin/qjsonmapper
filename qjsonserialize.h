@@ -11,6 +11,7 @@
 #include <limits>
 #include <cmath>
 
+#include <QDebug>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonValue>
@@ -25,16 +26,16 @@ namespace qjsonserialize
 {
 
 template<typename Data>
-bool serialize(QJsonValue &json, const Data &data)
+bool serialize(QJsonValue &json, const Data &data, ErrorInfo &errorInfo)
 {
-    Context<Serialize, Data> ctx(json, data);
+    Context<Serialize, Data> ctx(json, data, errorInfo);
     return mapValue(ctx);
 }
 
 template<typename Data>
-bool deserialize(const QJsonValue &json, Data &data)
+bool deserialize(const QJsonValue &json, Data &data, ErrorInfo &errorInfo)
 {
-    Context<Deserialize, Data> ctx(json, data);
+    Context<Deserialize, Data> ctx(json, data, errorInfo);
     return mapValue(ctx);
 }
 
@@ -47,16 +48,16 @@ public:
     typedef const T &DataRef;
     DataRef data;
     typedef ObjectMapping<Serialize> ObjectMappingType;
+    ErrorInfo &errorInfo;
 
-    template<typename T2>
-    Context(QJsonValue &json, const T2 &data)
-        : json(json), data(data)
+    Context(QJsonValue &json, const T &data, ErrorInfo &errorInfo)
+        : json(json), data(data), errorInfo(errorInfo)
     {
     }
 
     template<typename T2>
-    Context(const Context<Serialize, T2> &rhs)
-        : json(rhs.json), data(rhs.data)
+    explicit Context(const Context<Serialize, T2> &rhs)
+        : json(rhs.json), data(rhs.data), errorInfo(rhs.errorInfo)
     {
     }
 };
@@ -70,16 +71,16 @@ public:
     typedef T &DataRef;
     DataRef data;
     typedef ObjectMapping<Deserialize> ObjectMappingType;
+    ErrorInfo &errorInfo;
 
-    template<typename T2>
-    Context(const QJsonValue &json, T2 &data)
-        : json(json), data(data)
+    Context(const QJsonValue &json, T &data, ErrorInfo &errorInfo)
+        : json(json), data(data), errorInfo(errorInfo)
     {
     }
 
     template<typename T2>
-    Context(const Context<Deserialize, T2> &rhs)
-        : json(rhs.json), data(rhs.data)
+    explicit Context(const Context<Deserialize, T2> &rhs)
+        : json(rhs.json), data(rhs.data), errorInfo(rhs.errorInfo)
     {
     }
 };
@@ -182,20 +183,26 @@ class ObjectMappingInterface<Serialize>
 public:
     QJsonObject &jsonObject;
     bool &good;
+    ErrorInfo &errorInfo;
 
-    ObjectMappingInterface(QJsonObject &jsonObject, bool &good)
-        : jsonObject(jsonObject), good(good)
+    ObjectMappingInterface(QJsonObject &jsonObject, bool &good, ErrorInfo &errorInfo)
+        : jsonObject(jsonObject), good(good), errorInfo(errorInfo)
     {
     }
 
     template<typename AttributeType>
     bool mapField(const QString &key, const AttributeType &value)
     {
-        if (!good || jsonObject.contains(key)) {
+        if (!good) {
+            return false;
+        }
+        if (jsonObject.contains(key)) {
+            errorInfo.append(QStringLiteral("Duplicate attribute '%1'").arg(key));
             return good = false;
         }
         QJsonValue json;
-        if (!serialize(json, value)) {
+        if (!serialize(json, value, errorInfo)) {
+            errorInfo.append(QStringLiteral("Can't generate JSON for attribute '%1'").arg(key));
             return good = false;
         }
         jsonObject.insert(key, json);
@@ -234,8 +241,16 @@ public:
     template<typename AttributeType>
     bool mapQProperty(const QString &key, const QObject *object, const char *propertyName)
     {
+        if (!good) {
+            return false;
+        }
         QVariant asVariant(object->property(propertyName));
         if (!asVariant.convert(qMetaTypeId<AttributeType>())) {
+            QString errorMessage;
+            QDebug(&errorMessage) << "Can't convert" << asVariant
+                                  << "to" << QMetaType::typeName(qMetaTypeId<AttributeType>())
+                                  << "(when parsing" << key << ")";
+            errorInfo.append(errorMessage);
             return good = false;
         }
         return mapField(key, asVariant.value<AttributeType>());
@@ -296,19 +311,24 @@ class ObjectMappingInterface<Deserialize>
 public:
     const QJsonObject &jsonObject;
     bool &good;
+    ErrorInfo &errorInfo;
 
-    ObjectMappingInterface(const QJsonObject &jsonObject, bool &good)
-        : jsonObject(jsonObject), good(good)
+    ObjectMappingInterface(const QJsonObject &jsonObject, bool &good, ErrorInfo &errorInfo)
+        : jsonObject(jsonObject), good(good), errorInfo(errorInfo)
     {
     }
 
     template<typename AttributeType>
     bool mapField(const QString &key, AttributeType &value)
     {
-        if (!good || !jsonObject.contains(key)) {
+        if (!good) {
+            return false;
+        }
+        if (!jsonObject.contains(key)) {
+            errorInfo.append(QStringLiteral("JSON object has no attribute '%1'").arg(key));
             return good = false;
         }
-        return good = deserialize(jsonObject.value(key), value);
+        return parseAttr(key, jsonObject.value(key), value);
     }
 
     template<typename AttributeType>
@@ -321,7 +341,7 @@ public:
             value = defaultValue;
             return true;
         }
-        return good = deserialize(jsonObject.value(key), value);
+        return parseAttr(key, jsonObject.value(key), value);
     }
 
     template<typename AttributeType>
@@ -330,7 +350,7 @@ public:
         if (!good) {
             return false;
         }
-        return good = deserialize(jsonObject.contains(key) ? jsonObject.value(key) : defaultJsonValue, value);
+        return parseAttr(key, jsonObject.contains(key) ? jsonObject.value(key) : defaultJsonValue, value);
     }
 
     template<typename AttributeType, typename Class, typename GetterReturn>
@@ -366,6 +386,7 @@ public:
         typename util::RemoveConstRef<AttributeType>::Type value;
         if (mapField(key, value)) {
             good = (object->*setter)(value);
+            checkSetterResult(key);
         }
         return good;
     }
@@ -379,6 +400,7 @@ public:
         typename util::RemoveConstRef<AttributeType>::Type value;
         if (mapField(key, value, defaultValue)) {
             good = (object->*setter)(value);
+            checkSetterResult(key);
         }
         return good;
     }
@@ -389,6 +411,7 @@ public:
         AttributeType value;
         if (mapField(key, value)) {
             good = object->setProperty(propertyName, QVariant::fromValue(value));
+            checkSetterResult(key);
         }
         return good;
     }
@@ -399,6 +422,7 @@ public:
         AttributeType value;
         if (mapField(key, value, defaultValue)) {
             good = object->setProperty(propertyName, QVariant::fromValue(value));
+            checkSetterResult(key);
         }
         return good;
     }
@@ -409,6 +433,7 @@ public:
         AttributeType value;
         if (mapField(key, value, defaultValue)) {
             good = object->setProperty(propertyName, QVariant::fromValue(value));
+            checkSetterResult(key);
         }
         return good;
     }
@@ -430,6 +455,25 @@ public:
     {
         return mapQProperty<AttributeType>(QLatin1String(propertyName), object, propertyName, defaultValue);
     }
+
+private:
+    template<typename AttributeType>
+    bool parseAttr(const QString &key, const QJsonValue &json, AttributeType &value)
+    {
+        good = deserialize(json, value, errorInfo);
+        if (!good) {
+            errorInfo.append(QStringLiteral("Can't parse attribute '%1'").arg(key));
+        }
+        return good;
+    }
+
+    bool checkSetterResult(const QString &key)
+    {
+        if (!good) {
+            errorInfo.append(QStringLiteral("Can't set value for '%1'").arg(key));
+        }
+        return good;
+    }
 };
 
 template<>
@@ -444,8 +488,8 @@ public:
     using ObjectMappingInterface<Serialize>::mapGetSet;
     using ObjectMappingInterface<Serialize>::mapQProperty;
 
-    explicit ObjectMapping(QJsonValue &jsonValue)
-        : ObjectMappingInterface<Serialize>(jsonObject, good),
+    explicit ObjectMapping(QJsonValue &jsonValue, ErrorInfo &errorInfo)
+        : ObjectMappingInterface<Serialize>(jsonObject, good, errorInfo),
           jsonValue(jsonValue),
           good(true)
     {
@@ -471,8 +515,8 @@ public:
     using ObjectMappingInterface<Deserialize>::mapGetSet;
     using ObjectMappingInterface<Deserialize>::mapQProperty;
 
-    explicit ObjectMapping(const QJsonValue &jsonValue)
-        : ObjectMappingInterface<Deserialize>(jsonObject, good),
+    explicit ObjectMapping(const QJsonValue &jsonValue, ErrorInfo &errorInfo)
+        : ObjectMappingInterface<Deserialize>(jsonObject, good, errorInfo),
           jsonValue(jsonValue),
           jsonObject(jsonValue.toObject()),
           good(jsonValue.isObject())
@@ -544,13 +588,13 @@ public:
     }
 
     ObjectContext(typename Context<action, T>::DataRef data, const ObjectMappingInterface<action> &mapping)
-        : ObjectMappingInterface<action>(mapping.jsonObject, mapping.good), data(data)
+        : ObjectMappingInterface<action>(mapping.jsonObject, mapping.good, mapping.errorInfo), data(data)
     {
     }
 
     template<typename T2>
-    ObjectContext(const ObjectContext<action, T2> &copy)
-        : ObjectMappingInterface<action>(copy.jsonObject, copy.good), data(copy.data)
+    explicit ObjectContext(const ObjectContext<action, T2> &copy)
+        : ObjectMappingInterface<action>(copy.jsonObject, copy.good, copy.errorInfo), data(copy.data)
     {
     }
 };
@@ -574,7 +618,7 @@ template<Action action, typename T>
 bool mapValueImpl(const Context<action, T> &ctx,
                   util::FunctionExists<void, ObjectContext<action, T> &, &T::mapToJson> *)
 {
-    ObjectMapping<action> mapping(ctx.json);
+    ObjectMapping<action> mapping(ctx.json, ctx.errorInfo);
     ObjectContext<action, T> o(ctx.data, mapping);
     T::mapToJson(o);
     return mapping.good;
@@ -583,7 +627,7 @@ bool mapValueImpl(const Context<action, T> &ctx,
 template<Action action, typename T>
 bool mapValueImpl(const Context<action, T> &ctx, ...)
 {
-    ObjectMapping<action> mapping(ctx.json);
+    ObjectMapping<action> mapping(ctx.json, ctx.errorInfo);
     ObjectContext<action, T> o(ctx.data, mapping);
     mapObject(o);
     return mapping.good;
@@ -599,9 +643,18 @@ template<typename T>
 bool mapString(const Context<Deserialize, T> &ctx)
 {
     if (!ctx.json.isString()) {
+        QString errorMessage;
+        QDebug(&errorMessage) << "String expected instead of" << ctx.json;
+        ctx.errorInfo.append(errorMessage);
         return false;
     }
-    return fromQString(ctx.json.toString(), ctx.data);
+    if (fromQString(ctx.json.toString(), ctx.data)) {
+        return true;
+    }
+    QString errorMessage;
+    QDebug(&errorMessage) << "String conversion failed for" << ctx.json;
+    ctx.errorInfo.append(errorMessage);
+    return false;
 }
 
 template<typename T>
@@ -609,6 +662,7 @@ bool mapString(const Context<Serialize, T> &ctx)
 {
     QString asString;
     if (!toQString(ctx.data, asString)) {
+        ctx.errorInfo.append(QStringLiteral("Can't convert data to string"));
         return false;
     }
     ctx.json = QJsonValue(asString);
@@ -618,7 +672,10 @@ bool mapString(const Context<Serialize, T> &ctx)
 template<typename T>
 bool mapBool(const Context<Deserialize, T> &ctx)
 {
-    if (!ctx.json.isString()) {
+    if (!ctx.json.isBool()) {
+        QString errorMessage;
+        QDebug(&errorMessage) << "Boolean expected instead of" << ctx.json;
+        ctx.errorInfo.append(errorMessage);
         return false;
     }
     ctx.data = ctx.json.toBool();
@@ -636,9 +693,18 @@ template<typename T>
 bool mapNumeric(const Context<Deserialize, T> &ctx)
 {
     if (!ctx.json.isDouble()) {
+        QString errorMessage;
+        QDebug(&errorMessage) << "Number expected instead of" << ctx.json;
+        ctx.errorInfo.append(errorMessage);
         return false;
     }
-    return fromDouble(ctx.json.toDouble(), ctx.data);
+    if (fromDouble(ctx.json.toDouble(), ctx.data)) {
+        return true;
+    }
+    QString errorMessage;
+    QDebug(&errorMessage) << "Number conversion failed for" << ctx.json.toDouble();
+    ctx.errorInfo.append(errorMessage);
+    return false;
 }
 
 template<typename T>
@@ -646,6 +712,7 @@ bool mapNumeric(const Context<Serialize, T> &ctx)
 {
     double value;
     if (!toDouble(ctx.data, value)) {
+        ctx.errorInfo.append(QStringLiteral("Can't convert data to number"));
         return false;
     }
     ctx.json = QJsonValue(value);
@@ -756,7 +823,7 @@ bool mapSequence(const Context<Serialize, Container> &ctx)
     QJsonArray array;
     Q_FOREACH (const typename Container::value_type &v, ctx.data) {
         QJsonValue json;
-        if (!serialize(json, v)) {
+        if (!serialize(json, v, ctx.errorInfo)) {
             return false;
         }
         array.append(json);
@@ -769,12 +836,15 @@ template<typename Container>
 bool mapSequence(const Context<Deserialize, Container> &ctx)
 {
     if (!ctx.json.isArray()) {
+        QString errorMessage;
+        QDebug(&errorMessage) << "Array expected instead of" << ctx.json;
+        ctx.errorInfo.append(errorMessage);
         return false;
     }
     Container container;
     Q_FOREACH (const QJsonValue &v, ctx.json.toArray()) {
         typename Container::value_type item;
-        if (!deserialize(v, item)) {
+        if (!deserialize(v, item, ctx.errorInfo)) {
             return false;
         }
         container.push_back(item);
@@ -818,8 +888,8 @@ bool mapPair(const Context<Serialize, Pair> &ctx)
 {
     QJsonArray array;
     QJsonValue first, second;
-    if (!serialize(first, ctx.data.first) ||
-            !serialize(second, ctx.data.second))
+    if (!serialize(first, ctx.data.first, ctx.errorInfo) ||
+            !serialize(second, ctx.data.second, ctx.errorInfo))
     {
         return false;
     }
@@ -833,14 +903,22 @@ template<typename Pair>
 bool mapPair(const Context<Deserialize, Pair> &ctx)
 {
     if (!ctx.json.isArray()) {
+        QString errorMessage;
+        QDebug(&errorMessage) << "Array expected instead of" << ctx.json;
+        ctx.errorInfo.append(errorMessage);
         return false;
     }
     QJsonArray array(ctx.json.toArray());
     if (array.size() != 2) {
+        QString errorMessage;
+        QDebug(&errorMessage) << "Expected array of size 2, actual size is" << array.size();
+        ctx.errorInfo.append(errorMessage);
         return false;
     }
     Pair newData;
-    if (!deserialize(array[0], newData.first) || !deserialize(array[1], newData.second)) {
+    if (!deserialize(array[0], newData.first, ctx.errorInfo) ||
+            !deserialize(array[1], newData.second, ctx.errorInfo))
+    {
         return false;
     }
     ctx.data = newData;
@@ -917,15 +995,23 @@ bool mapAssociative(const Context<Serialize, typename Traits::Container> &ctx)
     QJsonObject object;
     for (typename Traits::Iterator i = ctx.data.begin(); i != ctx.data.end(); ++i) {
         QJsonValue keyJson;
-        if (!serialize(keyJson, Traits::key(i)) || !keyJson.isString()) {
+        if (!serialize(keyJson, Traits::key(i), ctx.errorInfo)) {
+            return false;
+        }
+        if (!keyJson.isString()) {
+            QString errorMessage;
+            QDebug(&errorMessage) << "String expected instead of" << keyJson;
+            ctx.errorInfo.append(errorMessage);
             return false;
         }
         QString keyString(keyJson.toString());
         if (object.contains(keyString)) {
+            ctx.errorInfo.append(QStringLiteral("Duplicate key '%1'").arg(keyString));
             return false;
         }
         QJsonValue valueJson;
-        if (!serialize(valueJson, Traits::value(i))) {
+        if (!serialize(valueJson, Traits::value(i), ctx.errorInfo)) {
+            ctx.errorInfo.append(QStringLiteral("Can't generate JSON for value of '%1'").arg(keyString));
             return false;
         }
         object.insert(keyString, valueJson);
@@ -944,14 +1030,16 @@ bool mapAssociative(const Context<Deserialize, typename Traits::Container> &ctx)
     QJsonObject object(ctx.json.toObject());
     for (QJsonObject::ConstIterator i = object.begin(); i != object.end(); ++i) {
         typename Traits::KeyType key;
-        if (!deserialize(QJsonValue(i.key()), key)) {
+        if (!deserialize(QJsonValue(i.key()), key, ctx.errorInfo)) {
             return false;
         }
         if (newData.count(key)) {
+            ctx.errorInfo.append(QStringLiteral("Duplicate key '%1'").arg(i.key()));
             return false;
         }
         typename Traits::ValueType value;
-        if (!deserialize(i.value(), value)) {
+        if (!deserialize(i.value(), value, ctx.errorInfo)) {
+            ctx.errorInfo.append(QStringLiteral("Can't parse value for key '%1'").arg(i.key()));
             return false;
         }
         Traits::insert(newData, key, value);
@@ -999,6 +1087,8 @@ template<typename T, typename StringArray>
 bool mapEnum(const Context<Serialize, T> &ctx, const StringArray &values)
 {
     if (static_cast<size_t>(ctx.data) >= util::arraySize(values)) {
+        ctx.errorInfo.append(QStringLiteral("Enum value %1 too big, max. possible value is %2")
+                             .arg(ctx.data).arg(util::arraySize(values)));
         return false;
     }
     ctx.json = QJsonValue(QString(values[ctx.data]));
@@ -1008,17 +1098,18 @@ bool mapEnum(const Context<Serialize, T> &ctx, const StringArray &values)
 template<typename T, typename StringArray>
 bool mapEnum(const Context<Deserialize, T> &ctx, const StringArray &values)
 {
-    if (!ctx.json.isString()) {
+    size_t n = util::arraySize(values);
+    QString stringValue;
+    if (!deserialize(ctx.json, stringValue, ctx.errorInfo)) {
         return false;
     }
-    size_t n = util::arraySize(values);
-    QString stringValue(ctx.json.toString());
     for (size_t i = 0; i < n; i++) {
         if (stringValue == values[i]) {
             ctx.data = static_cast<T>(i);
             return true;
         }
     }
+    ctx.errorInfo.append(QStringLiteral("Unknown enum value '%1'").arg(stringValue));
     return false;
 }
 
@@ -1027,6 +1118,9 @@ bool mapEnum(const Context<Serialize, T> &ctx, const QMetaEnum &metaEnum)
 {
     const char *value = metaEnum.valueToKey(ctx.data);
     if (!value) {
+        QString errorMessage;
+        QDebug(&errorMessage) << "Unknown enum value" << ctx.data << "(" << metaEnum.name() << ")";
+        ctx.errorInfo.append(errorMessage);
         return false;
     }
     ctx.json = QJsonValue(QString::fromUtf8(value));
@@ -1036,13 +1130,18 @@ bool mapEnum(const Context<Serialize, T> &ctx, const QMetaEnum &metaEnum)
 template<typename T>
 bool mapEnum(const Context<Deserialize, T> &ctx, const QMetaEnum &metaEnum)
 {
-    if (!ctx.json.isString()) {
+    QByteArray stringValue;
+    if (!deserialize(ctx.json, stringValue, ctx.errorInfo)) {
         return false;
     }
     bool ok = false;
-    int intValue = metaEnum.keyToValue(ctx.json.toString().toUtf8().constData(), &ok);
+    int intValue = metaEnum.keyToValue(stringValue.constData(), &ok);
     if (ok) {
         ctx.data = static_cast<T>(intValue);
+    } else {
+        QString errorMessage;
+        QDebug(&errorMessage) << "Unknown enum value" << stringValue << "(" << metaEnum.name() << ")";
+        ctx.errorInfo.append(errorMessage);
     }
     return ok;
 }
@@ -1052,6 +1151,9 @@ bool mapEnum(const Context<action, T> &ctx, const QMetaObject &metaObject, const
 {
     int enumIndex = metaObject.indexOfEnumerator(enumName);
     if (enumIndex < 0) {
+        QString errorMessage;
+        QDebug(&errorMessage) << "Enum" << enumName << "not found in" << metaObject.className();
+        ctx.errorInfo.append(errorMessage);
         return false;
     }
     return mapEnum(ctx, metaObject.enumerator(enumIndex));

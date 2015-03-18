@@ -12,7 +12,8 @@ private Q_SLOTS:
     {
         QJsonValue json(42);
         int value;
-        QVERIFY(qjsonserialize::deserialize(json, value));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::deserialize(json, value, e));
         QCOMPARE(value, 42);
         QCOMPARE(json.toInt(-1), 42);
     }
@@ -21,7 +22,8 @@ private Q_SLOTS:
     {
         QJsonValue json;
         int value = 42;
-        QVERIFY(qjsonserialize::serialize(json, value));
+        qjsonserialize::ErrorInfo e;
+        QVERIFY(qjsonserialize::serialize(json, value, e));
         QCOMPARE(json.toInt(-1), 42);
         QCOMPARE(value, 42);
     }
