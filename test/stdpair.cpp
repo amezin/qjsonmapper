@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 class StdPairTest : public QObject
 {
@@ -15,8 +15,8 @@ private Q_SLOTS:
         array.push_back(2);
 
         std::pair<int, int> v;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::deserialize(array, v, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::deserialize(array, v, e));
 
         QCOMPARE(v.first, 1);
         QCOMPARE(v.second, 2);
@@ -29,8 +29,8 @@ private Q_SLOTS:
         v.second = 2;
 
         QJsonValue json;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::serialize(json, v, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::serialize(json, v, e));
         QVERIFY(json.isArray());
 
         QJsonArray array(json.toArray());

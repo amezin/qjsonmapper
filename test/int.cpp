@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 class IntTest : public QObject
 {
@@ -12,8 +12,8 @@ private Q_SLOTS:
     {
         QJsonValue json(42);
         int value;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::deserialize(json, value, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::deserialize(json, value, e));
         QCOMPARE(value, 42);
         QCOMPARE(json.toInt(-1), 42);
     }
@@ -22,8 +22,8 @@ private Q_SLOTS:
     {
         QJsonValue json;
         int value = 42;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::serialize(json, value, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::serialize(json, value, e));
         QCOMPARE(json.toInt(-1), 42);
         QCOMPARE(value, 42);
     }

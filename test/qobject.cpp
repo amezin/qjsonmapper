@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 class QObjectTest : public QObject
 {
@@ -29,7 +29,7 @@ private Q_SLOTS:
     void deserialize();
 };
 
-namespace qjsonserialize {
+namespace qjsonmapper {
 
 template<Action action>
 void mapObject(ObjectContext<action, QObjectTest> &mapping)
@@ -46,8 +46,8 @@ void QObjectTest::serialize()
 {
     QObjectTest o;
     QJsonValue json;
-    qjsonserialize::ErrorInfo e;
-    QVERIFY(qjsonserialize::serialize(json, o, e));
+    qjsonmapper::ErrorInfo e;
+    QVERIFY(qjsonmapper::serialize(json, o, e));
     QVERIFY(json.isObject());
     QCOMPARE(json.toObject().value("get_set").toInt(), 42);
     QCOMPARE(json.toObject().value("property2").toString(),
@@ -61,10 +61,10 @@ void QObjectTest::deserialize()
 {
     QObjectTest o;
     QJsonObject json;
-    qjsonserialize::ErrorInfo e;
+    qjsonmapper::ErrorInfo e;
     json.insert("get_set", 123);
     json.insert("property3", 3.0);
-    QVERIFY(qjsonserialize::deserialize(json, o, e));
+    QVERIFY(qjsonmapper::deserialize(json, o, e));
     QCOMPARE(o.getSet, 123);
     QCOMPARE(o.property2, QStringLiteral("Default Value"));
     QCOMPARE(o.property3, 3.0);

@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 struct SomethingComplex
 {
@@ -43,7 +43,7 @@ private:
     QString getSet2;
 };
 
-namespace qjsonserialize {
+namespace qjsonmapper {
 
 template<Action action>
 void mapObject(ObjectContext<action, SomethingComplex> &ctx)
@@ -69,8 +69,8 @@ private Q_SLOTS:
         SomethingComplex o;
         o.set(123);
         QJsonValue json;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::serialize(json, o, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::serialize(json, o, e));
         QVERIFY(json.isObject());
         QJsonObject object(json.toObject());
         QCOMPARE(object.value("a").toInt(), 42);
@@ -88,8 +88,8 @@ private Q_SLOTS:
         json.insert("s2", QStringLiteral("LOL"));
         json.insert("getSet", 1);
         json.insert("getSet2", QStringLiteral("Test"));
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::deserialize(json, o, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::deserialize(json, o, e));
         QCOMPARE(o.a, 123);
         QCOMPARE(o.s, std::string("std::string"));
         QCOMPARE(o.s2, QStringLiteral("LOL"));

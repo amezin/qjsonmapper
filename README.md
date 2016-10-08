@@ -1,11 +1,8 @@
-QJsonSerialize
-==============
+QJsonMapper
+===========
 
 Build status:
-[![Build Status](https://travis-ci.org/sanya-m/qjsonserialize.svg?branch=master)](https://travis-ci.org/sanya-m/qjsonserialize)
-
-Build status on ancient GCC 4.4.7:
-[![Build Status](https://snap-ci.com/sanya-m/qjsonserialize/branch/master/build_image)](https://snap-ci.com/sanya-m/qjsonserialize/branch/master)
+[![Build Status](https://travis-ci.org/amezin/qjsonmapper.svg?branch=master)](https://travis-ci.org/amezin/qjsonmapper)
 
 Description
 -----------

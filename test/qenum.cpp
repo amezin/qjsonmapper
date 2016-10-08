@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 class QEnumTest : public QObject
 {
@@ -22,7 +22,7 @@ private Q_SLOTS:
     void deserialize();
 };
 
-namespace qjsonserialize
+namespace qjsonmapper
 {
 
 template<Action action>
@@ -36,14 +36,14 @@ bool mapValue(const Context<action, QEnumTest::TestEnum> &ctx)
 void QEnumTest::serialize()
 {
     QJsonValue json;
-    qjsonserialize::ErrorInfo e;
-    QVERIFY(qjsonserialize::serialize(json, Third, e));
+    qjsonmapper::ErrorInfo e;
+    QVERIFY(qjsonmapper::serialize(json, Third, e));
     QVERIFY(json.isString());
     QCOMPARE(json.toString(), QStringLiteral("Third"));
-    QVERIFY(qjsonserialize::serialize(json, First, e));
+    QVERIFY(qjsonmapper::serialize(json, First, e));
     QVERIFY(json.isString());
     QCOMPARE(json.toString(), QStringLiteral("First"));
-    QVERIFY(qjsonserialize::serialize(json, Second, e));
+    QVERIFY(qjsonmapper::serialize(json, Second, e));
     QVERIFY(json.isString());
     QCOMPARE(json.toString(), QStringLiteral("Second"));
 }
@@ -52,17 +52,17 @@ void QEnumTest::deserialize()
 {
     QJsonValue json(QStringLiteral("Second"));
     TestEnum value;
-    qjsonserialize::ErrorInfo e;
-    QVERIFY(qjsonserialize::deserialize(json, value, e));
+    qjsonmapper::ErrorInfo e;
+    QVERIFY(qjsonmapper::deserialize(json, value, e));
     QCOMPARE(value, Second);
     json = QJsonValue(QStringLiteral("Second"));
-    QVERIFY(qjsonserialize::deserialize(json, value, e));
+    QVERIFY(qjsonmapper::deserialize(json, value, e));
     QCOMPARE(value, Second);
     json = QJsonValue(QStringLiteral("First"));
-    QVERIFY(qjsonserialize::deserialize(json, value, e));
+    QVERIFY(qjsonmapper::deserialize(json, value, e));
     QCOMPARE(value, First);
     json = QJsonValue(QStringLiteral("NonExistant"));
-    QVERIFY(!qjsonserialize::deserialize(json, value, e));
+    QVERIFY(!qjsonmapper::deserialize(json, value, e));
 }
 
 QTEST_MAIN(QEnumTest)

@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 class StdVectorTest : public QObject
 {
@@ -16,8 +16,8 @@ private Q_SLOTS:
         v.push_back(3);
 
         QJsonValue json;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::serialize(json, v, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::serialize(json, v, e));
         QVERIFY(json.isArray());
 
         QJsonArray array(json.toArray());
@@ -35,8 +35,8 @@ private Q_SLOTS:
         array.push_back(3);
 
         std::vector<int> v;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::deserialize(array, v, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::deserialize(array, v, e));
 
         QCOMPARE(static_cast<size_t>(array.size()), v.size());
         QCOMPARE(array.at(0).toInt(), v[0]);

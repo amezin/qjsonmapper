@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 class QStringListTest : public QObject
 {
@@ -16,8 +16,8 @@ private Q_SLOTS:
         v.push_back(QStringLiteral("c"));
 
         QJsonValue json;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::serialize(json, v, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::serialize(json, v, e));
         QVERIFY(json.isArray());
 
         QJsonArray array(json.toArray());
@@ -35,8 +35,8 @@ private Q_SLOTS:
         json.push_back(QStringLiteral("c"));
 
         QStringList v;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::deserialize(json, v, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::deserialize(json, v, e));
 
         QCOMPARE(json.size(), v.size());
         QCOMPARE(json.at(0).toString(), v[0]);

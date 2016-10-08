@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 class SerializableTest : public QObject
 {
@@ -40,8 +40,8 @@ public:
         getSet2 = v;
     }
 
-    template<qjsonserialize::Action action>
-    static void mapToJson(qjsonserialize::ObjectContext<action, SerializableTest> &ctx)
+    template<qjsonmapper::Action action>
+    static void mapToJson(qjsonmapper::ObjectContext<action, SerializableTest> &ctx)
     {
         ctx.mapField("a", ctx.data.a) &&
                 ctx.mapField("s", ctx.data.s, ctx.data.s) &&
@@ -57,8 +57,8 @@ private Q_SLOTS:
         SerializableTest o;
         o.set(123);
         QJsonValue json;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::serialize(json, o, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::serialize(json, o, e));
         QVERIFY(json.isObject());
         QJsonObject object(json.toObject());
         QCOMPARE(object.value("a").toInt(), 42);
@@ -76,8 +76,8 @@ private Q_SLOTS:
         json.insert("s2", QStringLiteral("LOL"));
         json.insert("getSet", 1);
         json.insert("getSet2", QStringLiteral("Test"));
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::deserialize(json, o, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::deserialize(json, o, e));
         QCOMPARE(o.a, 123);
         QCOMPARE(o.s, std::string("std::string"));
         QCOMPARE(o.s2, QStringLiteral("LOL"));

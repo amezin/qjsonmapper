@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 class QStringTest : public QObject
 {
@@ -12,16 +12,16 @@ private Q_SLOTS:
     {
         QString s("Hello, World!");
         QJsonValue json;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::serialize(json, s, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::serialize(json, s, e));
         QVERIFY(json.isString());
         QCOMPARE(json.toString(), s);
         QString emptyString("");
-        QVERIFY(qjsonserialize::serialize(json, emptyString, e));
+        QVERIFY(qjsonmapper::serialize(json, emptyString, e));
         QVERIFY(json.isString());
         QCOMPARE(json.toString(), emptyString);
         emptyString = QString();
-        QVERIFY(qjsonserialize::serialize(json, emptyString, e));
+        QVERIFY(qjsonmapper::serialize(json, emptyString, e));
         QVERIFY(json.isString());
         QCOMPARE(json.toString(), emptyString);
     }
@@ -30,8 +30,8 @@ private Q_SLOTS:
     {
         QString s;
         QJsonValue json(QStringLiteral("Hello, World!"));
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::deserialize(json, s, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::deserialize(json, s, e));
         QCOMPARE(s, QStringLiteral("Hello, World!"));
     }
 };

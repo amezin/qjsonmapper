@@ -1,4 +1,4 @@
-#include "qjsonserialize_fwd.h"
+#include "qjsonmapper_fwd.h"
 
 #include <QMap>
 
@@ -8,7 +8,7 @@ class TestClass
     QMap<QString, int> map;
 };
 
-namespace qjsonserialize {
+namespace qjsonmapper {
 
 template<Action action>
 bool map(const Context<action, TestClass> &ctx)

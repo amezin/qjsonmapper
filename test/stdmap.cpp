@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "qjsonserialize.h"
+#include "qjsonmapper.h"
 
 class StdMapTest : public QObject
 {
@@ -16,8 +16,8 @@ private Q_SLOTS:
         data.insert(std::make_pair(std::string("3"), 3.0));
 
         QJsonValue json;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::serialize(json, data, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::serialize(json, data, e));
         QVERIFY(json.isObject());
 
         QJsonObject object(json.toObject());
@@ -34,8 +34,8 @@ private Q_SLOTS:
         object["3"] = 3.0;
 
         std::map<std::string, double> data;
-        qjsonserialize::ErrorInfo e;
-        QVERIFY(qjsonserialize::deserialize(object, data, e));
+        qjsonmapper::ErrorInfo e;
+        QVERIFY(qjsonmapper::deserialize(object, data, e));
         QCOMPARE(data.size(), static_cast<size_t>(3));
 
         QCOMPARE(data["1"], 1.0);

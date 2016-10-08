@@ -20,9 +20,9 @@
 #include <QVariant>
 #include <qnumeric.h>
 
-#include "qjsonserialize_fwd.h"
+#include "qjsonmapper_fwd.h"
 
-namespace qjsonserialize
+namespace qjsonmapper
 {
 
 template<typename Data>
@@ -1161,22 +1161,22 @@ bool mapEnum(const Context<action, T> &ctx, const QMetaObject &metaObject, const
 
 }
 
-#define QJSONSERIALIZE_MAPTOJSON_INSTANTIATE(Type) \
-    namespace qjsonserialize { \
-        template bool mapValue<qjsonserialize::Serialize>(const qjsonserialize::Context<qjsonserialize::Serialize, Type> &); \
-        template bool mapValue<qjsonserialize::Deserialize>(const qjsonserialize::Context<qjsonserialize::Deserialize, Type> &); \
+#define QJSONMAPPER_MAPTOJSON_INSTANTIATE(Type) \
+    namespace qjsonmapper { \
+        template bool mapValue<qjsonmapper::Serialize>(const qjsonmapper::Context<qjsonmapper::Serialize, Type> &); \
+        template bool mapValue<qjsonmapper::Deserialize>(const qjsonmapper::Context<qjsonmapper::Deserialize, Type> &); \
     }
 
-#define QJSONSERIALIZE_MAPTOJSON_OBJECT_INSTANTIATE(Type) \
-    namespace qjsonserialize { \
-        template void mapObject<qjsonserialize::Serialize>(qjsonserialize::ObjectContext<qjsonserialize::Serialize, Type> &); \
-        template void mapObject<qjsonserialize::Deserialize>(qjsonserialize::ObjectContext<qjsonserialize::Deserialize, Type> &); \
+#define QJSONMAPPER_MAPTOJSON_OBJECT_INSTANTIATE(Type) \
+    namespace qjsonmapper { \
+        template void mapObject<qjsonmapper::Serialize>(qjsonmapper::ObjectContext<qjsonmapper::Serialize, Type> &); \
+        template void mapObject<qjsonmapper::Deserialize>(qjsonmapper::ObjectContext<qjsonmapper::Deserialize, Type> &); \
     }
 
-#define QJSONSERIALIZE_MAPTOJSON_OBJECT_MEM_INSTANTIATE(Class) \
-    template void Class::mapToJson<qjsonserialize::Serialize>(qjsonserialize::ObjectContext<qjsonserialize::Serialize, Class> &); \
-    template void Class::mapToJson<qjsonserialize::Deserialize>(qjsonserialize::ObjectContext<qjsonserialize::Deserialize, Class> &);
+#define QJSONMAPPER_MAPTOJSON_OBJECT_MEM_INSTANTIATE(Class) \
+    template void Class::mapToJson<qjsonmapper::Serialize>(qjsonmapper::ObjectContext<qjsonmapper::Serialize, Class> &); \
+    template void Class::mapToJson<qjsonmapper::Deserialize>(qjsonmapper::ObjectContext<qjsonmapper::Deserialize, Class> &);
 
-#define QJSONSERIALIZE_MAPTOJSON_MEM_INSTANTIATE(Class) \
-    template bool Class::mapToJson<qjsonserialize::Serialize>(const qjsonserialize::Context<qjsonserialize::Serialize, Class> &); \
-    template bool Class::mapToJson<qjsonserialize::Deserialize>(const qjsonserialize::Context<qjsonserialize::Deserialize, Class> &);
+#define QJSONMAPPER_MAPTOJSON_MEM_INSTANTIATE(Class) \
+    template bool Class::mapToJson<qjsonmapper::Serialize>(const qjsonmapper::Context<qjsonmapper::Serialize, Class> &); \
+    template bool Class::mapToJson<qjsonmapper::Deserialize>(const qjsonmapper::Context<qjsonmapper::Deserialize, Class> &);
