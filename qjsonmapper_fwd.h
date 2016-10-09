@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2016 Aleksandr Mezin
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license.  See the COPYING file for details.
+ */
+
 #pragma once
 
 class QJsonValue;
